@@ -245,6 +245,41 @@ Configure as mesmas variáveis de ambiente do `.env.local` no painel da platafor
 
 ---
 
+## 🐙 Git e GitHub
+
+O repositório já vem com histórico Git e dois workflows em `.github/workflows/`:
+
+| Workflow | O que faz |
+| --- | --- |
+| `ci.yml` | Lint, checagem de tipos e build a cada push/PR. |
+| `deploy-vercel.yml` | Publica na Vercel (só roda se `VERCEL_TOKEN` estiver configurado). |
+
+Para publicar no seu GitHub:
+
+```bash
+# 1. Crie o repositório vazio no GitHub (sem README) e conecte
+git remote add origin https://github.com/<seu-usuario>/barbearia-navalha.git
+
+# 2. Envie tudo
+git branch -M main
+git push -u origin main
+```
+
+Depois é só configurar os secrets no GitHub (Settings → Secrets and variables →
+Actions) caso queira o deploy automático:
+
+| Secret | Descrição |
+| --- | --- |
+| `VERCEL_TOKEN` | Token da Vercel. |
+| `VERCEL_ORG_ID` | ID da organização na Vercel. |
+| `VERCEL_PROJECT_ID` | ID do projeto na Vercel. |
+
+> **Nota:** neste ambiente o `gh` (GitHub CLI) não está instalado e não há
+> credenciais configuradas, então o `push` precisa ser feito da sua máquina
+> (ou instale o CLI com `winget install GitHub.cli` e rode `gh auth login`).
+
+---
+
 ## 📄 Licença
 
 MIT — use, altere e distribua livremente.
