@@ -1,9 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
-  cacheComponents: true,
-  partialPrefetching: true,
+  // O painel e as páginas públicas leem dados do Supabase em tempo real.
+  // Desativamos o Cache Components para que as leituras dinâmicas não exijam
+  // fronteiras de Suspense em todas as rotas.
+  cacheComponents: false,
   turbopack: {
     rules: {
       "*.css": {

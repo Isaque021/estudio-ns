@@ -1,26 +1,267 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@theme {
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, monospace;
+  --font-display: var(--font-display), var(--font-geist-sans), sans-serif;
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  /* Paleta da marca — tons de carvão + latão */
+  --color-brand-50: #fbf8ef;
+  --color-brand-100: #f5edda;
+  --color-brand-200: #ebdcb6;
+  --color-brand-300: #ddc384;
+  --color-brand-400: #cfa75a;
+  --color-brand-500: #c08a32;
+  --color-brand-600: #a06d27;
+  --color-brand-700: #7f5323;
+  --color-brand-800: #67441f;
+  --color-brand-900: #56391c;
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  --color-ink-50: #f6f6f7;
+  --color-ink-100: #e7e7ea;
+  --color-ink-200: #cbcbd1;
+  --color-ink-300: #a5a5ae;
+  --color-ink-400: #7c7c87;
+  --color-ink-500: #5f5f69;
+  --color-ink-600: #4b4b54;
+  --color-ink-700: #3e3e45;
+  --color-ink-800: #26262b;
+  --color-ink-900: #17171a;
+  --color-ink-950: #0c0c0e;
+
+  --animate-marquee: marquee 28s linear infinite;
+  --animate-fade-up: fade-up 0.6s ease-out both;
+
+  @keyframes marquee {
+    from {
+      transform: translateX(0);
+    }
+    to {
+      transform: translateX(-50%);
+    }
+  }
+
+  @keyframes fade-up {
+    from {
+      opacity: 0;
+      transform: translateY(16px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 }
 
+:root {
+  color-scheme: dark;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--color-ink-950);
+  color: var(--color-ink-100);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Textura sutil de papel sobre o fundo escuro */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.35;
+  background-image: radial-gradient(
+      circle at 1px 1px,
+      rgba(255, 255, 255, 0.035) 1px,
+      transparent 0
+    );
+  background-size: 28px 28px;
+}
+
+@layer components {
+  .container-page {
+    width: 100%;
+    margin-inline: auto;
+    max-width: 80rem;
+    padding-inline: 1.25rem;
+  }
+
+  @media (min-width: 768px) {
+    .container-page {
+      padding-inline: 2rem;
+    }
+  }
+
+  .display {
+    font-family: var(--font-display);
+    letter-spacing: 0.02em;
+    line-height: 0.95;
+    text-transform: uppercase;
+  }
+
+  .eyebrow {
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--color-brand-400);
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border-radius: 9999px;
+    font-weight: 600;
+    font-size: 0.875rem;
+    padding: 0.75rem 1.5rem;
+    transition:
+      background-color 0.2s ease,
+      color 0.2s ease,
+      border-color 0.2s ease,
+      transform 0.15s ease;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  .btn:active {
+    transform: translateY(1px);
+  }
+
+  .btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .btn-primary {
+    background-color: var(--color-brand-500);
+    color: #1a1206;
+  }
+
+  .btn-primary:hover:not(:disabled) {
+    background-color: var(--color-brand-400);
+  }
+
+  .btn-ghost {
+    border: 1px solid var(--color-ink-700);
+    color: var(--color-ink-100);
+    background-color: transparent;
+  }
+
+  .btn-ghost:hover:not(:disabled) {
+    border-color: var(--color-brand-500);
+    color: var(--color-brand-300);
+  }
+
+  .btn-whatsapp {
+    background-color: #25d366;
+    color: #05240f;
+  }
+
+  .btn-whatsapp:hover:not(:disabled) {
+    background-color: #1fbe5a;
+  }
+
+  .card {
+    border-radius: 1rem;
+    border: 1px solid var(--color-ink-800);
+    background-color: color-mix(in oklab, var(--color-ink-900) 80%, transparent);
+    transition:
+      border-color 0.25s ease,
+      transform 0.25s ease,
+      box-shadow 0.25s ease;
+  }
+
+  .card-hover:hover {
+    border-color: color-mix(in oklab, var(--color-brand-500) 55%, var(--color-ink-800));
+    transform: translateY(-4px);
+    box-shadow: 0 18px 40px -24px rgba(0, 0, 0, 0.9);
+  }
+
+  .input {
+    width: 100%;
+    border-radius: 0.75rem;
+    border: 1px solid var(--color-ink-700);
+    background-color: var(--color-ink-900);
+    padding: 0.7rem 0.9rem;
+    font-size: 0.9rem;
+    color: var(--color-ink-50);
+    transition:
+      border-color 0.2s ease,
+      box-shadow 0.2s ease;
+  }
+
+  .input::placeholder {
+    color: var(--color-ink-500);
+  }
+
+  .input:focus {
+    outline: none;
+    border-color: var(--color-brand-500);
+    box-shadow: 0 0 0 3px rgba(192, 138, 50, 0.18);
+  }
+
+  .label {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-ink-300);
+    margin-bottom: 0.4rem;
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    border-radius: 9999px;
+    padding: 0.25rem 0.7rem;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    border: 1px solid var(--color-ink-700);
+    color: var(--color-ink-200);
+    background-color: rgba(255, 255, 255, 0.03);
+  }
+}
+
+@layer utilities {
+  .text-gradient {
+    background: linear-gradient(
+      100deg,
+      var(--color-brand-300),
+      var(--color-brand-500) 45%,
+      var(--color-brand-200)
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .divider-gold {
+    height: 1px;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      color-mix(in oklab, var(--color-brand-500) 60%, transparent),
+      transparent
+    );
+  }
+
+  .hide-scrollbar {
+    scrollbar-width: none;
+  }
+
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
 }
