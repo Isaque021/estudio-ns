@@ -1,6 +1,7 @@
 "use client";
 
 import { Loader2, LogIn, Scissors } from "lucide-react";
+import { useSearchParams } from "next/navigation";
 import { useActionState } from "react";
 
 import { signIn, type AuthState } from "@/actions/auth";
@@ -10,6 +11,11 @@ const initialState: AuthState = { status: "idle", message: "" };
 
 export function LoginForm() {
   const [state, formAction, pending] = useActionState(signIn, initialState);
+  const params = useSearchParams();
+  // Retorno pós-login (ex.: link de gerenciamento de reserva que exigiu
+  // login). Só caminho relativo interno; nada de domínios externos.
+  const back = params.get("redirect") ?? "";
+  const retorno = back.startsWith("/") && !back.startsWith("//") ? back : "";
 
   return (
     <div className="flex min-h-screen items-center justify-center px-5 py-12">
@@ -28,6 +34,7 @@ export function LoginForm() {
           </p>
 
           <form action={formAction} className="mt-6 space-y-4">
+            {retorno && <input type="hidden" name="redirect" value={retorno} />}
             <div>
               <label htmlFor="email" className="label">
                 E-mail
@@ -38,7 +45,7 @@ export function LoginForm() {
                 type="email"
                 required
                 autoComplete="email"
-                placeholder="admin@barbearianavalha.com.br"
+                placeholder="Seu e-mail de acesso"
                 className="input"
               />
             </div>
@@ -80,8 +87,8 @@ export function LoginForm() {
           </form>
 
           <p className="mt-5 text-center text-xs leading-relaxed text-ink-500">
-            Sem Supabase configurado? O painel abre em modo demonstração com dados
-            locais de exemplo.
+            O acesso é exclusivo da equipe do estúdio. Em modo demonstração
+            (sem banco configurado), o painel permanece fechado.
           </p>
         </div>
       </div>

@@ -1,8 +1,10 @@
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import "server-only";
 
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isSupabaseConfigured } from "@/lib/supabase/client";
+import { getAdminSession } from "@/lib/auth";
 import { demoStore } from "@/lib/demo-store";
 import {
   demoGallery,
@@ -11,6 +13,7 @@ import {
   demoServices,
 } from "@/lib/demo-data";
 import type {
+  AgendaSettings,
   Booking,
   BookingStatus,
   BusinessHour,
@@ -21,9 +24,19 @@ import type {
   OrderStatus,
   Product,
   Professional,
+  ProfessionalHour,
+  ScheduleException,
   Service,
   StockMovement,
 } from "@/lib/types";
+import {
+  busyIntervalsFromBookings,
+  intervalsOverlap,
+  intervalFitsWindow,
+  nowInStudioTZ,
+  parseHM,
+  resolveDayWindows,
+} from "@/lib/schedule";
 
 /**
  * Camada de dados.
@@ -35,14 +48,39 @@ import type {
 
 export const demoMode = !isSupabaseConfigured();
 
+/**
+ * Papel da sessão atual, para leituras administrativas. O cliente
+ * service_role ignora RLS, então o ESCOPO é aplicado aqui, no servidor:
+ * admin vê tudo; profissional vê o próprio; staff genérico não vê lista.
+ */
+async function staffScope(): Promise<{ admin: boolean; professionalId: string | null; allowed: boolean }> {
+  const session = await getAdminSession();
+  return {
+    admin: session?.role === "admin",
+    professionalId: session?.professionalId ?? null,
+    allowed: session?.role === "admin" || session?.role === "professional",
+  };
+}
+
 async function db() {
   if (demoMode) return null;
-  return createServerClient();
+
+  return createSupabaseClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+        detectSessionInUrl: false,
+      },
+    },
+  );
 }
 
 async function adminDb() {
   if (demoMode) return null;
-  return createAdminClient() ?? createServerClient();
+  return createServerClient();
 }
 
 /* -------------------------------------------------------------------------- */
@@ -57,8 +95,10 @@ function toService(row: Row): Service {
     name: String(row.name),
     slug: String(row.slug),
     description: String(row.description ?? ""),
-    priceCents: Number(row.price_cents ?? 0),
-    durationMin: Number(row.duration_min ?? 30),
+    // Preço e duração podem não estar cadastrados (serviços novos do
+    // estúdio): null flui até a interface, que omite ou bloqueia.
+    priceCents: row.price_cents == null ? null : Number(row.price_cents),
+    durationMin: row.duration_min == null ? null : Number(row.duration_min),
     category: String(row.category ?? ""),
     imageUrl: String(row.image_url ?? "/images/service-01.svg"),
     active: Boolean(row.active ?? true),
@@ -117,7 +157,7 @@ function toProduct(row: Row): Product {
   };
 }
 
-function toBooking(row: Row): Booking {
+export function bookingFromRow(row: Row): Booking {
   return {
     id: String(row.id),
     code: String(row.code),
@@ -134,6 +174,8 @@ function toBooking(row: Row): Booking {
     notes: row.notes ? String(row.notes) : null,
     priceCents: Number(row.price_cents ?? 0),
     createdAt: String(row.created_at),
+    durationMin: row.duration_minutes == null ? undefined : Number(row.duration_minutes),
+    idempotencyKey: row.idempotency_key ? String(row.idempotency_key) : null,
   };
 }
 
@@ -182,7 +224,12 @@ export async function getServices(): Promise<Service[]> {
     .eq("active", true)
     .order("position", { ascending: true });
 
-  if (error || !data || data.length === 0) return demoStore.services.filter((s) => s.active);
+  // Com banco configurado, NUNCA substitui por dados de demonstração:
+  // erro e catálogo vazio respondem vazio (o site mostra o estado real).
+  if (error || !data || data.length === 0) {
+    if (error) console.error("getServices:", error.message);
+    return [];
+  }
   return (data as Row[]).map(toService);
 }
 
@@ -201,7 +248,10 @@ export async function getProfessionals(): Promise<Professional[]> {
     .eq("active", true)
     .order("position", { ascending: true });
 
-  if (error || !data || data.length === 0) return demoProfessionals.filter((p) => p.active);
+  if (error || !data || data.length === 0) {
+    if (error) console.error("getProfessionals:", error.message);
+    return [];
+  }
   return (data as Row[]).map(toProfessional);
 }
 
@@ -214,7 +264,10 @@ export async function getGallery(): Promise<GalleryItem[]> {
     .select("*")
     .order("position", { ascending: true });
 
-  if (error || !data || data.length === 0) return demoGallery;
+  if (error || !data || data.length === 0) {
+    if (error) console.error("getGallery:", error.message);
+    return [];
+  }
   return (data as Row[]).map(toGalleryItem);
 }
 
@@ -227,7 +280,10 @@ export async function getBusinessHours(): Promise<BusinessHour[]> {
     .select("*")
     .order("weekday", { ascending: true });
 
-  if (error || !data || data.length === 0) return demoHours;
+  if (error || !data || data.length === 0) {
+    if (error) console.error("getBusinessHours:", error.message);
+    return [];
+  }
   return (data as Row[]).map(toBusinessHour);
 }
 
@@ -241,7 +297,10 @@ export async function getProducts(): Promise<Product[]> {
     .eq("active", true)
     .order("name", { ascending: true });
 
-  if (error || !data || data.length === 0) return demoStore.products.filter((p) => p.active);
+  if (error || !data || data.length === 0) {
+    if (error) console.error("getProducts:", error.message);
+    return [];
+  }
   return (data as Row[]).map(toProduct);
 }
 
@@ -266,28 +325,176 @@ export async function getRelatedProducts(productId: string, limit = 3): Promise<
 /*  Agenda                                                                     */
 /* -------------------------------------------------------------------------- */
 
-export async function getBookedSlots(professionalId: string, date: string): Promise<string[]> {
+export async function getBookingSettings(): Promise<AgendaSettings> {
   const supabase = await db();
+  if (!supabase) return demoStore.settings;
+
+  const { data } = await supabase
+    .from("booking_settings")
+    .select("hold_minutes")
+    .limit(1)
+    .maybeSingle();
+
+  const fallback = Math.max(1, Number(process.env.BOOKING_HOLD_MINUTES ?? 30) || 30);
+  return { holdMinutes: Math.max(1, Number(data?.hold_minutes ?? fallback) || fallback) };
+}
+
+async function getProfessionalHours(): Promise<ProfessionalHour[]> {
+  const supabase = await db();
+  if (!supabase) return demoStore.professionalHours;
+
+  const { data, error } = await supabase.from("professional_hours").select("*");
+  if (error || !data) throw new Error("Não foi possível consultar o expediente.");
+  return (data as Row[]).map((row) => ({
+    professionalId: String(row.professional_id),
+    weekday: Number(row.weekday),
+    opensAt: row.opens_at ? String(row.opens_at).slice(0, 5) : null,
+    closesAt: row.closes_at ? String(row.closes_at).slice(0, 5) : null,
+    closed: Boolean(row.closed),
+  }));
+}
+
+async function getScheduleExceptions(): Promise<ScheduleException[]> {
+  const supabase = demoMode ? null : createAdminClient();
+  if (!demoMode && !supabase) throw new Error("Credencial do servidor ausente.");
+  if (!supabase) return demoStore.scheduleExceptions;
+
+  const { data, error } = await supabase
+    .from("professional_exceptions")
+    .select("*")
+    .order("scheduled_date", { ascending: true });
+  if (error || !data) throw new Error("Nao foi possivel consultar os bloqueios da agenda.");
+  return (data as Row[]).map((row) => ({
+    id: String(row.id),
+    professionalId: String(row.professional_id),
+    date: String(row.scheduled_date),
+    kind: (row.kind as ScheduleException["kind"]) ?? "block-range",
+    startAt: row.start_time ? String(row.start_time).slice(0, 5) : null,
+    endAt: row.end_time ? String(row.end_time).slice(0, 5) : null,
+    note: row.note ? String(row.note) : null,
+    createdAt: String(row.created_at),
+  }));
+}
+
+async function getBookingsForDay(professionalId: string, date: string): Promise<Booking[]> {
+  const supabase = demoMode ? null : createAdminClient();
+  if (!demoMode && !supabase) throw new Error("Credencial do servidor ausente.");
   if (!supabase) {
-    return demoStore.bookings
-      .filter(
-        (b) =>
-          b.professionalId === professionalId &&
-          b.date === date &&
-          (b.status === "pending" || b.status === "confirmed"),
-      )
-      .map((b) => b.time);
+    return demoStore.bookings.filter(
+      (b) =>
+        b.professionalId === professionalId &&
+        b.date === date &&
+        (b.status === "pending" || b.status === "confirmed"),
+    );
   }
 
   const { data, error } = await supabase
     .from("bookings")
-    .select("scheduled_time, status")
+    .select("*")
     .eq("professional_id", professionalId)
     .eq("scheduled_date", date)
     .in("status", ["pending", "confirmed"]);
 
-  if (error || !data) return [];
-  return (data as Row[]).map((row) => String(row.scheduled_time).slice(0, 5));
+  if (error || !data) throw new Error("Nao foi possivel consultar a disponibilidade.");
+  return (data as Row[]).map(bookingFromRow);
+}
+
+/**
+ * Estado da agenda do profissional em um dia: janelas de atendimento
+ * (padrão → individual → exceções) e intervalos reservados (confirmadas +
+ * pendentes dentro do prazo).
+ */
+export async function getDayAgenda(options: {
+  professionalId: string;
+  date: string;
+  services: Service[];
+  excludeBookingId?: string;
+}) {
+  const [globalHours, proHours, exceptions, settings, bookings] = await Promise.all([
+    getBusinessHours(),
+    getProfessionalHours(),
+    getScheduleExceptions(),
+    getBookingSettings(),
+    getBookingsForDay(options.professionalId, options.date),
+  ]);
+
+  const windows = resolveDayWindows({
+    date: options.date,
+    globalHours,
+    professionalHours: proHours.filter((h) => h.professionalId === options.professionalId),
+    // Exceção vale só no próprio dia ajustado.
+    exceptions: exceptions.filter(
+      (e) => e.professionalId === options.professionalId && e.date === options.date,
+    ),
+  });
+
+  const busy = busyIntervalsFromBookings({
+    bookings,
+    services: options.services,
+    holdMinutes: settings.holdMinutes,
+    excludeBookingId: options.excludeBookingId,
+  });
+
+  return { windows, busy, settings, globalHours };
+}
+
+export async function getScheduleData(): Promise<{
+  hours: ProfessionalHour[];
+  exceptions: ScheduleException[];
+  settings: AgendaSettings;
+}> {
+  const session = await getAdminSession();
+  if (!session) throw new Error("Nao autorizado.");
+
+  const [hours, exceptions, settings] = await Promise.all([
+    getProfessionalHours(),
+    getScheduleExceptions(),
+    getBookingSettings(),
+  ]);
+
+  if (session.role === "admin") {
+    return { hours, exceptions, settings };
+  }
+
+  return {
+    hours: hours.filter((item) => item.professionalId === session.professionalId),
+    exceptions: exceptions.filter((item) => item.professionalId === session.professionalId),
+    settings,
+  };
+}
+
+/**
+ * Confirmação de pendente expirado no painel: revalida a agenda na hora.
+ * Retorna mensagem de conflito ou null quando pode confirmar.
+ */
+export async function validatePendingConfirm(
+  booking: Booking,
+  services: Service[],
+): Promise<string | null> {
+  const servicesList = services.length > 0 ? services : await getServices();
+  const duration =
+    booking.durationMin ?? servicesList.find((s) => s.id === booking.serviceId)?.durationMin ?? 30;
+  const start = parseHM(booking.time);
+  if (start == null) return "Horário da reserva é inválido.";
+
+  const agenda = await getDayAgenda({
+    professionalId: booking.professionalId,
+    date: booking.date,
+    services: servicesList,
+    excludeBookingId: booking.id,
+  });
+
+  if (!intervalFitsWindow(start, duration, agenda.windows)) {
+    return "Fora do expediente do profissional neste dia. Recuse e combine outro horário.";
+  }
+  if (agenda.busy.some((busy) => intervalsOverlap(busy, { start, end: start + duration }))) {
+    return "Solicitação expirou e o horário já estava ocupado. Recuse a solicitação.";
+  }
+  const now = nowInStudioTZ();
+  if (booking.date < now.date || (booking.date === now.date && start <= now.minutes)) {
+    return "Horário já passou. Recuse ou combine outro atendimento com o cliente.";
+  }
+  return null;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -295,29 +502,122 @@ export async function getBookedSlots(professionalId: string, date: string): Prom
 /* -------------------------------------------------------------------------- */
 
 export async function getAdminBookings(): Promise<Booking[]> {
+  if (!(await staffScope()).allowed) return [];
   const supabase = await adminDb();
   if (!supabase) return demoStore.bookings;
 
-  const { data, error } = await supabase
-    .from("bookings")
-    .select("*")
+  const scope = await staffScope();
+
+  let query = supabase.from("bookings").select("*");
+  // Profissional lê APENAS o próprio escopo; admin lê tudo; qualquer
+  // combinação fora disso não recebe lista alguma.
+  if (!scope.allowed) return [];
+  if (!scope.admin) {
+    query = query.eq("professional_id", scope.professionalId ?? "00000000-0000-0000-0000-000000000000");
+  }
+
+  const { data, error } = await query
     .order("scheduled_date", { ascending: false })
     .order("scheduled_time", { ascending: false });
 
-  if (error || !data) return demoStore.bookings;
-  return (data as Row[]).map(toBooking);
+  // Com banco configurado não há substituição por demonstração: erro
+  // responde vazio (e é registrado), nunca dados fictícios.
+  if (error || !data) {
+    if (error) console.error("getAdminBookings:", error.message);
+    return [];
+  }
+  return (data as Row[]).map(bookingFromRow);
+}
+
+/**
+ * Reserva por código (o código é o único dado no link de gestão — dados
+ * pessoais e credenciais não entram na URL).
+ */
+export async function getBookingByCode(code: string): Promise<Booking | null> {
+  if (!code || code.length > 80 || !(await getAdminSession())) return null;
+
+  const supabase = await adminDb();
+  if (!supabase) {
+    return demoStore.bookings.find((b) => b.code === code) ?? null;
+  }
+
+  const { data: row } = await supabase
+    .from("bookings")
+    .select("*")
+    .eq("code", code)
+    .maybeSingle();
+
+  return row ? bookingFromRow(row) : null;
 }
 
 export async function getAdminClients(): Promise<Client[]> {
+  const session = await getAdminSession();
+
+  if (!session) return [];
+
+  if (session.role === "professional") {
+    if (!session.professionalId) return [];
+
+    const bookings = (await getAdminBookings())
+      .filter((booking) => booking.professionalId === session.professionalId)
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+
+    const clientsByPhone = new Map<string, Client>();
+
+    for (const booking of bookings) {
+      const phone = booking.clientPhone.replace(/\D/g, "");
+      const key = phone || booking.id;
+      let client = clientsByPhone.get(key);
+
+      if (!client) {
+        client = {
+          id: key,
+          name: booking.clientName,
+          phone: booking.clientPhone,
+          email: booking.clientEmail,
+          notes: null,
+          totalBookings: 0,
+          totalSpentCents: 0,
+          lastBookingAt: booking.createdAt,
+          createdAt: booking.createdAt,
+        };
+
+        clientsByPhone.set(key, client);
+      }
+
+      client.totalBookings += 1;
+
+      if (
+        booking.status === "confirmed" ||
+        booking.status === "completed"
+      ) {
+        client.totalSpentCents += booking.priceCents;
+      }
+
+      if (booking.createdAt < client.createdAt) {
+        client.createdAt = booking.createdAt;
+      }
+    }
+
+    return [...clientsByPhone.values()];
+  }
+
+  if (session.role !== "admin") return [];
   const supabase = await adminDb();
   if (!supabase) return demoStore.clients;
+
+  // Relação completa de clientes é dado do estúdio: só administrador.
+  if (!(await staffScope()).admin) return [];
 
   const { data, error } = await supabase
     .from("clients")
     .select("*")
     .order("created_at", { ascending: false });
 
-  if (error || !data) return demoStore.clients;
+  if (error || !data) {
+    if (error) console.error("getAdminClients:", error.message);
+    return [];
+  }
 
   const clients = (data as Row[]).map((row) => ({
     id: String(row.id),
@@ -345,9 +645,9 @@ export async function getAdminClients(): Promise<Client[]> {
     const lastBookingAt =
       own && own.length > 0
         ? own
-            .map((b) => String(b.created_at))
-            .sort()
-            .at(-1) ?? null
+          .map((b) => String(b.created_at))
+          .sort()
+          .at(-1) ?? null
         : null;
 
     return { ...client, totalBookings, totalSpentCents, lastBookingAt };
@@ -355,15 +655,21 @@ export async function getAdminClients(): Promise<Client[]> {
 }
 
 export async function getAdminOrders(): Promise<Order[]> {
+  if (!(await staffScope()).admin) return [];
   const supabase = await adminDb();
   if (!supabase) return demoStore.orders;
+
+  if (!(await staffScope()).admin) return [];
 
   const { data, error } = await supabase
     .from("orders")
     .select("*")
     .order("created_at", { ascending: false });
 
-  if (error || !data) return demoStore.orders;
+  if (error || !data) {
+    if (error) console.error("getAdminOrders:", error.message);
+    return [];
+  }
 
   const { data: items } = await supabase.from("order_items").select("*");
 
@@ -376,44 +682,65 @@ export async function getAdminOrders(): Promise<Order[]> {
 }
 
 export async function getAdminProducts(): Promise<Product[]> {
+  if (!(await staffScope()).admin) return [];
   const supabase = await adminDb();
   if (!supabase) return demoStore.products;
 
+  if (!(await staffScope()).admin) return [];
+
   const { data, error } = await supabase.from("products").select("*").order("name");
 
-  if (error || !data) return demoStore.products;
+  if (error || !data) {
+    if (error) console.error("getAdminProducts:", error.message);
+    return [];
+  }
   return (data as Row[]).map(toProduct);
 }
 
 export async function getAdminServices(): Promise<Service[]> {
+  if (!(await staffScope()).admin) return [];
   const supabase = await adminDb();
   if (!supabase) return demoServices;
+
+  if (!(await staffScope()).admin) return [];
 
   const { data, error } = await supabase
     .from("services")
     .select("*")
     .order("position", { ascending: true });
 
-  if (error || !data) return demoServices;
+  if (error || !data) {
+    if (error) console.error("getAdminServices:", error.message);
+    return [];
+  }
   return (data as Row[]).map(toService);
 }
 
 export async function getAdminProfessionals(): Promise<Professional[]> {
+  if (!(await staffScope()).admin) return [];
   const supabase = await adminDb();
   if (!supabase) return demoProfessionals;
+
+  if (!(await staffScope()).admin) return [];
 
   const { data, error } = await supabase
     .from("professionals")
     .select("*")
     .order("position", { ascending: true });
 
-  if (error || !data) return demoProfessionals;
+  if (error || !data) {
+    if (error) console.error("getAdminProfessionals:", error.message);
+    return [];
+  }
   return (data as Row[]).map(toProfessional);
 }
 
 export async function getStockMovements(): Promise<StockMovement[]> {
+  if (!(await staffScope()).admin) return [];
   const supabase = await adminDb();
   if (!supabase) return demoStore.stockMovements;
+
+  if (!(await staffScope()).admin) return [];
 
   const { data, error } = await supabase
     .from("stock_movements")
@@ -421,7 +748,10 @@ export async function getStockMovements(): Promise<StockMovement[]> {
     .order("created_at", { ascending: false })
     .limit(100);
 
-  if (error || !data) return [];
+  if (error || !data) {
+    if (error) console.error("getStockMovements:", error.message);
+    return [];
+  }
 
   const products = await getAdminProducts();
   const nameById = new Map(products.map((p) => [p.id, p.name]));
@@ -438,6 +768,12 @@ export async function getStockMovements(): Promise<StockMovement[]> {
 }
 
 export async function getDashboardReport(): Promise<DashboardReport> {
+  const session = await getAdminSession();
+
+  if (!session || session.role !== "admin") {
+    throw new Error("Acesso restrito ao administrador.");
+  }
+
   const bookings = await getAdminBookings();
   const orders = await getAdminOrders();
   const clients = await getAdminClients();

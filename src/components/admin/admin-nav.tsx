@@ -4,6 +4,7 @@ import {
   BarChart3,
   Boxes,
   CalendarCheck,
+  CalendarDays,
   LayoutDashboard,
   Package,
   Scissors,
@@ -20,6 +21,7 @@ import { cn } from "@/lib/utils";
 export const adminNav = [
   { href: "/admin", label: "Visão geral", icon: LayoutDashboard },
   { href: "/admin/agendamentos", label: "Agendamentos", icon: CalendarCheck },
+  { href: "/admin/agendas", label: "Agendas", icon: CalendarDays },
   { href: "/admin/clientes", label: "Clientes", icon: Users },
   { href: "/admin/equipe", label: "Equipe", icon: UserCog },
   { href: "/admin/servicos", label: "Serviços", icon: Scissors },
@@ -29,12 +31,27 @@ export const adminNav = [
   { href: "/admin/relatorios", label: "Relatórios", icon: BarChart3 },
 ];
 
-export function AdminNav({ onNavigate }: { onNavigate?: () => void }) {
+type AdminNavProps = {
+  role?: string;
+  onNavigate?: () => void;
+};
+
+export function AdminNav({ role, onNavigate }: AdminNavProps) {
   const pathname = usePathname();
 
+  const visibleItems = adminNav.filter((item) => {
+    if (role === "admin") return true;
+
+    return (
+      role === "professional" &&
+      (item.href === "/admin/agendamentos" ||
+        item.href === "/admin/agendas" ||
+        item.href === "/admin/clientes")
+    );
+  });
   return (
     <nav className="space-y-1">
-      {adminNav.map((item) => {
+      {visibleItems.map((item) => {
         const active =
           item.href === "/admin" ? pathname === "/admin" : pathname.startsWith(item.href);
         return (

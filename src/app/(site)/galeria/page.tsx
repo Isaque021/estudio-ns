@@ -9,7 +9,7 @@ import { contactLink } from "@/lib/whatsapp";
 export const metadata: Metadata = {
   title: "Galeria",
   description:
-    "Fotos dos cortes, barbas e colorações executados na Barbearia Navalha. Inspire-se e agende o seu.",
+    "Fotos dos cortes, barbas e colorações executados no Estúdio NS. Inspire-se e agende o seu.",
 };
 
 export default async function GalleryPage() {

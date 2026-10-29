@@ -3,6 +3,8 @@
 import { Check, Loader2, MessageCircle, Package, X } from "lucide-react";
 import { useMemo, useState, useTransition } from "react";
 
+import { ensureDdi } from "@/lib/whatsapp";
+
 import { setOrderStatus } from "@/actions/admin";
 import {
   formatCreatedAt,
@@ -137,7 +139,7 @@ export function OrdersTable({ orders }: { orders: Order[] }) {
                     {formatCurrency(order.totalCents)}
                   </span>
                   <a
-                    href={`https://wa.me/${order.clientPhone.replace(/\D/g, "")}`}
+                    href={`https://wa.me/${ensureDdi(order.clientPhone)}`}
                     target="_blank"
                     rel="noreferrer"
                     className="flex size-9 items-center justify-center rounded-lg border border-ink-700 text-ink-300 transition-colors hover:border-[#25d366] hover:text-[#25d366]"

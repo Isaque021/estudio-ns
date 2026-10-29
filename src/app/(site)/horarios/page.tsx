@@ -8,7 +8,7 @@ import { contactLink } from "@/lib/whatsapp";
 export const metadata: Metadata = {
   title: "Horários",
   description:
-    "Horário de funcionamento da barbearia, por dia da semana. Funcionamos todos os dias, inclusive domingo.",
+    "Funcionamento da barbearia: terça a sábado, das 9h às 19h. Domingo e segunda fechados.",
 };
 
 export default async function HoursPage() {
@@ -23,8 +23,8 @@ export default async function HoursPage() {
           Quando a porta está aberta
         </h1>
         <p className="mt-4 text-base leading-relaxed text-ink-400">
-          Funcionamos todos os dias da semana. No fim de semana o horário muda — por
-          isso, agendar evita qualquer surpresa.
+          Terça a sábado, das 9h às 19h (fuso de São Paulo). Domingo e segunda
+          a porta está fechada — e a agenda online respeita exatamente isso.
         </p>
       </div>
 

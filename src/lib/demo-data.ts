@@ -21,11 +21,11 @@ import type {
 export const demoServices: Service[] = [
   {
     id: "svc-corte",
-    name: "Corte masculino",
+    name: "Máquina e tesoura",
     slug: "corte-masculino",
     description:
       "Corte clássico ou social, executado com tesoura e máquina, finalizado com styling.",
-    priceCents: 4500,
+    priceCents: 5500,
     durationMin: 30,
     category: "Corte",
     imageUrl: "/images/service-01.svg",
@@ -34,7 +34,7 @@ export const demoServices: Service[] = [
   },
   {
     id: "svc-barba",
-    name: "Barba completa",
+    name: "Barba",
     slug: "barba-completa",
     description:
       "Barba com toalha quente, óleo, navalha e finalização com balm ou pomada.",
@@ -51,7 +51,7 @@ export const demoServices: Service[] = [
     slug: "corte-e-barba",
     description:
       "O combo mais pedido: corte impecável e barba alinhada, com chá de cortesia.",
-    priceCents: 7000,
+    priceCents: 7500,
     durationMin: 50,
     category: "Combo",
     imageUrl: "/images/service-03.svg",
@@ -60,11 +60,11 @@ export const demoServices: Service[] = [
   },
   {
     id: "svc-degrade",
-    name: "Degradê / Military cut",
-    slug: "degrade-military-cut",
+    name: "Degradê navalhado",
+    slug: "degrade-navalhado",
     description:
-      "Degradêmilimetrado na máquina e acabamento preciso nas laterais com navalha.",
-    priceCents: 5500,
+      "Degradê milimetrado na máquina e acabamento preciso nas laterais com navalha.",
+    priceCents: 6000,
     durationMin: 40,
     category: "Corte",
     imageUrl: "/images/service-04.svg",
@@ -72,9 +72,26 @@ export const demoServices: Service[] = [
     position: 4,
   },
   {
+    // Serviço da tabela do estúdio que ficou de fora do print anterior.
+    // Tem preço (R$ 40) mas a duração ainda não existe no cadastro — nada
+    // é inventado: o card mostra o valor, a consulta segue pelo WhatsApp
+    // e o agendamento online volta quando a duração for cadastrada.
+    id: "svc-maquininha",
+    name: "Só maquininha — pentes 1 e 2 ou 2 e 3",
+    slug: "so-maquininha",
+    description:
+      "Acabamento só na máquina, com o pente que preferir (1 e 2 ou 2 e 3) e contorno feito na hora.",
+    priceCents: 4000,
+    durationMin: null,
+    category: "Corte",
+    imageUrl: "/images/service-04.svg",
+    active: true,
+    position: 5,
+  },
+  {
     id: "svc-platinado",
-    name: "Platinado / Coloração",
-    slug: "platinado-coloracao",
+    name: "Platinado",
+    slug: "platinado",
     description:
       "Descoloração global ou parcial com matização e tratamento nutritivo.",
     priceCents: 12000,
@@ -82,34 +99,70 @@ export const demoServices: Service[] = [
     category: "Coloração",
     imageUrl: "/images/service-05.svg",
     active: true,
-    position: 5,
+    position: 6,
   },
   {
-    id: "svc-barba-designer",
-    name: "Barba designer",
-    slug: "barba-designer",
-    description:
-      "Contorno em letra e navalha, alinhamento de linha e acabamento premium.",
-    priceCents: 6000,
-    durationMin: 40,
-    category: "Barba",
+    // Serviço aprovado do Neto sem preço/duração cadastrados: enquanto o
+    // cadastro não existir, nada é inventado — o card mostra só o nome e o
+    // agendamento online fica bloqueado (combinar pelo WhatsApp).
+    id: "svc-cacheados",
+    name: "Corte de cabelo cacheado feminino",
+    slug: "corte-cacheado-feminino",
+    description: "Corte para cabelos cacheados e crespos, no formato que a cliente quiser.",
+    priceCents: null,
+    durationMin: null,
+    category: "Cachos",
     imageUrl: "/images/service-06.svg",
     active: true,
-    position: 6,
+    position: 7,
+  },
+  {
+    id: "svc-alisamento",
+    name: "Alisamento",
+    slug: "alisamento",
+    description: "Alisamento com análise prévia do cabelo, produtos e proteção da fibra.",
+    priceCents: null,
+    durationMin: null,
+    category: "Cachos",
+    imageUrl: "/images/service-10.svg",
+    active: true,
+    position: 8,
   },
   {
     id: "svc-sobrancelha",
     name: "Sobrancelha",
     slug: "sobrancelha",
     description: "Design e alinhamento de sobrancelhas com pinça e linha.",
-    priceCents: 2000,
+    // Ajuste aprovado (antes R$ 20). Serviço da BARBEARIA — distinto do
+    // "Design de sobrancelhas" da área Unhas & Beleza (cadastro próprio
+    // abaixo), que continua sem tabela oficial de valores.
+    priceCents: 1500,
     durationMin: 15,
     category: "Cuidados",
     imageUrl: "/images/service-07.svg",
     active: true,
-    position: 7,
+    position: 9,
   },
   {
+    // Serviço DISTINCTO do "Sobrancelha" da barbearia: item da Raquel na
+    // área Unhas & Beleza. Valor/duração ainda sem tabela oficial — nada
+    // é inventado; o card mostra "Consulte valores" e o fluxo online
+    // explica a lacuna na etapa de horário.
+    id: "svc-design-sobrancelha",
+    name: "Design de sobrancelhas",
+    slug: "design-de-sobrancelhas",
+    description: "Design de sobrancelhas com a Raquel (Unhas & Beleza).",
+    priceCents: null,
+    durationMin: null,
+    category: "Cuidados",
+    imageUrl: "/images/service-07.svg",
+    active: true,
+    position: 14,
+  },
+  {
+    // Retirada da oferta pública e de novos agendamentos a pedido do
+    // estúdio. Continua no cadastro (inativa) para preservar reservas
+    // antigas; pode voltar quando quiserem, no painel.
     id: "svc-hidratizacao",
     name: "Hidratação capilar",
     slug: "hidratacao-capilar",
@@ -118,8 +171,8 @@ export const demoServices: Service[] = [
     durationMin: 60,
     category: "Cuidados",
     imageUrl: "/images/service-08.svg",
-    active: true,
-    position: 8,
+    active: false,
+    position: 10,
   },
   {
     id: "svc-crianca",
@@ -131,7 +184,7 @@ export const demoServices: Service[] = [
     category: "Infantil",
     imageUrl: "/images/service-09.svg",
     active: true,
-    position: 9,
+    position: 11,
   },
   {
     id: "svc-franear",
@@ -143,70 +196,121 @@ export const demoServices: Service[] = [
     category: "Combo",
     imageUrl: "/images/service-10.svg",
     active: true,
-    position: 10,
+    position: 12,
+  },
+  {
+    // Retirado da oferta e do agendamento públicos por decisão do estúdio.
+    // Fica inativo (não apagado) para preservar o histórico de reservas cujo
+    // service_id aponta para cá.
+    id: "svc-barba-designer",
+    name: "Barba designer",
+    slug: "barba-designer",
+    description:
+      "Contorno em letra e navalha, alinhamento de linha e acabamento premium.",
+    priceCents: 6000,
+    durationMin: 40,
+    category: "Barba",
+    imageUrl: "/images/service-06.svg",
+    active: false,
+    position: 13,
   },
 ];
 
+/**
+ * Equipe real aprovada pelo estúdio. Referências antigas (Rafael, Gustavo,
+ * Diego, Matheus e Caio) eram conteúdo de demonstração e não executam
+ * serviços: agendamento novo não pode usá-las.
+ *
+ * Fotos/bio/cargo continuam vazios até a equipe fornecer (a interface
+ * mostra as iniciais no lugar da foto). O WhatsApp de cada profissional
+ * agora é real: as reservas abrem no chat de quem vai atender.
+ */
 export const demoProfessionals: Professional[] = [
   {
-    id: "pro-rafael",
-    name: "Rafael Mota",
-    slug: "rafael-mota",
-    role: "Barbeiro sênior · Fundador",
-    bio: "Mais de 12 anos de cadeira. Especialista em cortes tradicionais, degradê milimetrado e navalha em linha.",
-    photoUrl: "/images/pro-01.svg",
-    phone: "5511999990001",
-    specialties: ["Corte masculino", "Degradê / Military cut", "Corte + Barba", "Barba designer"],
+    id: "pro-neto",
+    name: "Neto",
+    slug: "neto",
+    role: "",
+    bio: "",
+    photoUrl: "",
+    // WhatsApp do Neto: todas as reservas dele abrem aqui — inclusive os
+    // exclusivos (cacheados, Platinado e Alisamento). Dígitos E164 p/ wa.me.
+    phone: "5511975589299",
+    // Cinco serviços gerais (Máquina e tesoura, Degradê navalhado,
+    // maquininha, Barba e Corte + Barba) divididos com Isaque; os
+    // exclusivos dele são Platinado, Corte de cabelo cacheado feminino e
+    // Alisamento. A "Sobrancelha" da barbearia também é dele (e do
+    // Isaque) — produção confirma. Sem Barba designer: o serviço foi
+    // retirado da oferta pública.
+    specialties: [
+      "Máquina e tesoura",
+      "Degradê navalhado",
+      "Só maquininha — pentes 1 e 2 ou 2 e 3",
+      "Barba",
+      "Corte + Barba",
+      "Platinado",
+      "Corte de cabelo cacheado feminino",
+      "Alisamento",
+      "Sobrancelha",
+    ],
     active: true,
     position: 1,
   },
   {
-    id: "pro-gustavo",
-    name: "Gustavo Lins",
-    slug: "gustavo-lins",
-    role: "Barbeiro · Colorista",
-    bio: "Referência em coloração e platinado. Trabalha com técnicas de descoloração segura e matização precisa.",
-    photoUrl: "/images/pro-02.svg",
-    phone: "5511999990002",
-    specialties: ["Platinado / Coloração", "Corte + Barba", "Corte masculino"],
+    id: "pro-isaque",
+    name: "Isaque",
+    slug: "isaque",
+    role: "",
+    bio: "",
+    photoUrl: "",
+    // WhatsApp do Isaque para as reservas que ele executa. E164 p/ wa.me.
+    phone: "5521983700520",
+    // Executa os mesmos cinco serviços gerais do Neto e a "Sobrancelha"
+    // da barbearia (produção confirma); os exclusivos do Neto
+    // (Platinado, cacheados femininos e Alisamento) são só do Neto.
+    specialties: [
+      "Máquina e tesoura",
+      "Degradê navalhado",
+      "Só maquininha — pentes 1 e 2 ou 2 e 3",
+      "Barba",
+      "Corte + Barba",
+      "Sobrancelha",
+    ],
     active: true,
     position: 2,
   },
   {
-    id: "pro-diego",
-    name: "Diego Santana",
-    slug: "diego-santana",
-    role: "Barbeiro · Barba specialist",
-    bio: "Referência nacional em barboterapia e navalha. Conhece cada contorno do rosto.",
-    photoUrl: "/images/pro-03.svg",
-    phone: "5511999990003",
-    specialties: ["Barba completa", "Barba designer", "Sobrancelha", "Pezinho / Franear"],
+    id: "pro-isabelle",
+    name: "Isabelle",
+    slug: "isabelle",
+    role: "",
+    bio: "",
+    photoUrl: "",
+    // WhatsApp da Isabelle: as reservas dela abrem aqui. E164 p/ wa.me.
+    phone: "5511933186719",
+    // Executa unhas e unhas de gel — serviços SEM preço/duração no
+    // cadastro: aparecem como "Consulte valores" e o fluxo online
+    // direta a consulta pelo WhatsApp dela (mesma regra da produção).
+    specialties: ["Unhas", "Unhas de gel"],
     active: true,
     position: 3,
   },
   {
-    id: "pro-matheus",
-    name: "Matheus Ribeiro",
-    slug: "matheus-ribeiro",
-    role: "Barbeiro · Estilista",
-    bio: "Cortes modernos, texturizados e estilos autorais. Atende a galera jovem e quem busca um estilo autoral.",
-    photoUrl: "/images/pro-04.svg",
-    phone: "5511999990004",
-    specialties: ["Corte masculino", "Degradê / Military cut", "Hidratação capilar"],
+    id: "pro-raquel",
+    name: "Raquel",
+    slug: "raquel",
+    role: "",
+    bio: "",
+    photoUrl: "",
+    // WhatsApp da Raquel para reservas das especialidades dela. E164 p/ wa.me.
+    phone: "5511989891969",
+    // Ela executa "Design de sobrancelhas" (área Unhas & Beleza, sem tabela
+    // oficial de valores), Pedicure, Calista e Depilação — estes três útimos
+    // seguem SEM cadastro no catálogo. A "Sobrancelha" da BARBEARIA é de
+    // Isaque/Neto (produção confirma) — aqui não entra.
+    specialties: ["Design de sobrancelhas"],
     active: true,
     position: 4,
-  },
-  {
-    id: "pro-caio",
-    name: "Caio Ferreira",
-    slug: "caio-ferreira",
-    role: "Barbeiro · Assistente",
-    bio: "Em fase de formação avançada na casa, já atende cortes infantis e degradê com muita firmeza.",
-    photoUrl: "/images/pro-05.svg",
-    phone: "5511999990005",
-    specialties: ["Corte infantil", "Corte masculino", "Pezinho / Franear"],
-    active: true,
-    position: 5,
   },
 ];
 
@@ -221,13 +325,14 @@ export const demoGallery: GalleryItem[] = [
   { id: "gal-08", title: "Acabamento premium", imageUrl: "/images/gallery-08.svg", category: "Detalhes", position: 8 },
 ];
 
+// Padrão do estúdio: terça a sábado, 09:00–19:00; domingo e segunda fechados.
 export const demoHours: BusinessHour[] = [
-  { weekday: 0, label: "Domingo", opensAt: "10:00", closesAt: "17:00", closed: false },
-  { weekday: 1, label: "Segunda-feira", opensAt: "09:00", closesAt: "20:00", closed: false },
-  { weekday: 2, label: "Terça-feira", opensAt: "09:00", closesAt: "20:00", closed: false },
-  { weekday: 3, label: "Quarta-feira", opensAt: "09:00", closesAt: "20:00", closed: false },
-  { weekday: 4, label: "Quinta-feira", opensAt: "09:00", closesAt: "21:00", closed: false },
-  { weekday: 5, label: "Sexta-feira", opensAt: "09:00", closesAt: "21:00", closed: false },
+  { weekday: 0, label: "Domingo", opensAt: null, closesAt: null, closed: true },
+  { weekday: 1, label: "Segunda-feira", opensAt: null, closesAt: null, closed: true },
+  { weekday: 2, label: "Terça-feira", opensAt: "09:00", closesAt: "19:00", closed: false },
+  { weekday: 3, label: "Quarta-feira", opensAt: "09:00", closesAt: "19:00", closed: false },
+  { weekday: 4, label: "Quinta-feira", opensAt: "09:00", closesAt: "19:00", closed: false },
+  { weekday: 5, label: "Sexta-feira", opensAt: "09:00", closesAt: "19:00", closed: false },
   { weekday: 6, label: "Sábado", opensAt: "09:00", closesAt: "19:00", closed: false },
 ];
 

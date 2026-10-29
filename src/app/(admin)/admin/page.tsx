@@ -7,20 +7,38 @@ import {
   Users,
 } from "lucide-react";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
 import { AdminPageHeader, StatCard } from "@/components/admin/admin-page-header";
 import { formatCreatedAt } from "@/lib/admin-ui";
-import { getAdminBookings, getAdminClients, getAdminOrders, getDashboardReport } from "@/lib/data";
-import { demoMode } from "@/lib/data";
+import { getAdminSession } from "@/lib/auth";
+import {
+  demoMode,
+  getAdminBookings,
+  getAdminClients,
+  getAdminOrders,
+  getDashboardReport,
+} from "@/lib/data";
 import { formatCurrency } from "@/lib/utils";
 
 export default async function AdminDashboardPage() {
+  const session = await getAdminSession();
+
+  if (!session) {
+    redirect("/admin/login");
+  }
+
+  if (session.role !== "admin") {
+    redirect("/admin/agendamentos");
+  }
+
   const [report, bookings, orders, clients] = await Promise.all([
     getDashboardReport(),
     getAdminBookings(),
     getAdminOrders(),
     getAdminClients(),
   ]);
+
 
   const upcoming = bookings
     .filter((b) => b.status === "pending" || b.status === "confirmed")
@@ -155,11 +173,10 @@ export default async function AdminDashboardPage() {
                     </p>
                   </div>
                   <span
-                    className={`shrink-0 rounded-full border px-2.5 py-0.5 text-[0.65rem] font-semibold uppercase ${
-                      booking.status === "confirmed"
+                    className={`shrink-0 rounded-full border px-2.5 py-0.5 text-[0.65rem] font-semibold uppercase ${booking.status === "confirmed"
                         ? "border-emerald-600/40 bg-emerald-500/10 text-emerald-300"
                         : "border-brand-600/50 bg-brand-500/10 text-brand-300"
-                    }`}
+                      }`}
                   >
                     {booking.status === "confirmed" ? "Confirmado" : "Aguardando"}
                   </span>
@@ -210,7 +227,7 @@ export default async function AdminDashboardPage() {
           <CalendarCheck className="size-5 text-brand-400" />
           <p className="mt-3 text-sm font-semibold text-ink-50">Confirmar reservas</p>
           <p className="mt-1 text-xs text-ink-400">
-            {report.bookingsPending} aguardando resposta no WhatsApp.
+            {report.bookingsPending} reservas aguardando confirmação.
           </p>
         </Link>
         <Link

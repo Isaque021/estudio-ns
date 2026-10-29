@@ -5,7 +5,7 @@ import { useState } from "react";
 
 import { AdminNav, MobileNavClose } from "@/components/admin/admin-nav";
 
-export function AdminMobileNav() {
+export function AdminMobileNav({ role }: { role?: string }) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -32,7 +32,7 @@ export function AdminMobileNav() {
               <span className="display text-lg text-ink-50">Painel</span>
               <MobileNavClose onClose={() => setOpen(false)} />
             </div>
-            <AdminNav onNavigate={() => setOpen(false)} />
+            <AdminNav role={role} onNavigate={() => setOpen(false)} />
           </div>
         </div>
       )}

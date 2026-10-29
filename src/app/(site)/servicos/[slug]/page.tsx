@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { ArrowRight, Check, Clock } from "lucide-react";
 
-import { ProfessionalRow } from "@/components/site/professional-card";
-import { getProfessionals, getServiceBySlug, getServices } from "@/lib/data";
+import { getServiceBySlug, getServices } from "@/lib/data";
+import { resolveServiceSlug } from "@/lib/service-slugs";
+import { whatsappServiceSlugs } from "@/lib/booking-policy";
 import { formatCurrency, formatDuration } from "@/lib/utils";
 
 export async function generateStaticParams() {
@@ -20,9 +21,15 @@ export async function generateMetadata({
   const { slug } = await params;
   const service = await getServiceBySlug(slug);
   if (!service) return { title: "Serviço não encontrado" };
+
+  // Só cita valor/duração no SEO quando existem no cadastro.
+  const extras = [
+    service.priceCents != null ? `Por ${formatCurrency(service.priceCents)}` : null,
+    service.durationMin != null ? formatDuration(service.durationMin) : null,
+  ].filter(Boolean);
   return {
     title: service.name,
-    description: `${service.description} Por ${formatCurrency(service.priceCents)} — ${formatDuration(service.durationMin)}.`,
+    description: `${service.description}${extras.length ? ` ${extras.join(" — ")}.` : ""}`,
   };
 }
 
@@ -32,14 +39,20 @@ export default async function ServiceDetailPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
+
+  // Serviços renomeados mantêm IDs e histórico; quem caiu num endereço
+  // antigo (bookmarks, WhatsApp da equipe) é levado à página nova.
+  const canonicalSlug = resolveServiceSlug(slug);
+  if (canonicalSlug !== slug) {
+    redirect(`/servicos/${canonicalSlug}`);
+  }
+
   const service = await getServiceBySlug(slug);
   if (!service) notFound();
 
-  const professionals = await getProfessionals();
-  const team = professionals.filter((professional) =>
-    professional.specialties.includes(service.name),
-  );
-  const matched = team.length > 0 ? team : professionals;
+  const whatsappOnly = whatsappServiceSlugs.has(service.slug);
+  const canBookOnline = !whatsappOnly && service.priceCents != null && service.durationMin != null;
+  const contactPage = whatsappOnly ? "/beleza" : "/barbearia";
 
   return (
     <div className="container-page py-16 lg:py-20">
@@ -77,10 +90,8 @@ export default async function ServiceDetailPage({
 
             <ul className="mt-8 grid gap-3 sm:grid-cols-2">
               {[
-                "Acabamento e styling inclusos",
-                "Produtos de Mallory e American Crew",
-                "Chá e café por conta da casa",
-                "Sem fila para quem agendou",
+                "Pagamento presencial no estúdio",
+                "Confira os detalhes com a equipe",
               ].map((item) => (
                 <li key={item} className="flex items-start gap-2.5 text-sm text-ink-300">
                   <Check className="mt-0.5 size-4 shrink-0 text-brand-500" />
@@ -98,8 +109,12 @@ export default async function ServiceDetailPage({
                 <p className="text-xs tracking-[0.18em] text-ink-500 uppercase">
                   Valor
                 </p>
+                {/* Sem preço cadastrado, nada é inventado: só a equipe deve
+                    demonstrar o valor ainda não tabelado. */}
                 <p className="font-display mt-1 text-4xl text-brand-400">
-                  {formatCurrency(service.priceCents)}
+                  {service.priceCents != null
+                    ? formatCurrency(service.priceCents)
+                    : "A definir"}
                 </p>
               </div>
               <div className="text-right">
@@ -108,7 +123,9 @@ export default async function ServiceDetailPage({
                 </p>
                 <p className="mt-1 flex items-center justify-end gap-1.5 text-lg text-ink-100">
                   <Clock className="size-4 text-brand-500" />
-                  {formatDuration(service.durationMin)}
+                  {service.durationMin != null
+                    ? formatDuration(service.durationMin)
+                    : "A definir"}
                 </p>
               </div>
             </div>
@@ -119,27 +136,22 @@ export default async function ServiceDetailPage({
               O pagamento é feito presencialmente, no local, depois do atendimento.
             </p>
 
+            <p className="mt-4 text-sm leading-relaxed text-ink-400">
+              {canBookOnline
+                ? "Sua solicitação depende da confirmação da equipe."
+                : "Combine valores, data e horário diretamente pelo WhatsApp na página a seguir."}
+            </p>
+
             <Link
-              href={`/agendar?servico=${service.slug}`}
+              href={canBookOnline ? `/agendar?servico=${service.slug}` : contactPage}
               className="btn btn-primary mt-6 w-full"
             >
-              Agendar este serviço
+              {canBookOnline ? "Solicitar agendamento" : "Combinar com a profissional ou equipe"}
               <ArrowRight className="size-4" />
             </Link>
             <Link href="/precos" className="btn btn-ghost mt-2 w-full">
               Ver todos os preços
             </Link>
-          </div>
-
-          <div className="mt-8">
-            <h2 className="text-xs font-semibold tracking-[0.2em] text-ink-200 uppercase">
-              Profissionais disponíveis
-            </h2>
-            <div className="mt-4 space-y-3">
-              {matched.slice(0, 3).map((professional) => (
-                <ProfessionalRow key={professional.id} professional={professional} />
-              ))}
-            </div>
           </div>
         </aside>
       </div>

@@ -40,3 +40,19 @@ next-env.d.ts
 # editors
 .idea/
 .vscode/
+
+# Configuracoes privadas
+.env
+.env.*
+!.env.example
+
+# Dependencias e arquivos gerados
+node_modules/
+.next/
+*.tsbuildinfo
+
+# Backups locais
+*.zip
+*.backup-*
+backup-*/
+supabase-backup-*/

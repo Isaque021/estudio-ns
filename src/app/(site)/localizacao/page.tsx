@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Car, MapPin, Navigation, Train, UtensilsCrossed } from "lucide-react";
+import { MapPin, Navigation } from "lucide-react";
 
 import { siteConfig } from "@/lib/site-config";
 import { contactLink } from "@/lib/whatsapp";
@@ -18,11 +18,12 @@ export default function LocationPage() {
       <div className="max-w-2xl">
         <p className="eyebrow">Onde estamos</p>
         <h1 className="display mt-4 text-4xl text-ink-50 sm:text-5xl">
-          Rua das Laranjeiras, 240
+          {address.street}
         </h1>
         <p className="mt-4 text-base leading-relaxed text-ink-400">
-          Estamos no coração do Centro, a duas quadras da praça principal. Fachada
-          escura, porta de madeira e o letreiro da navalha aceso.
+          CEP {address.zip}. Funcionamos de terça a sábado, das 9h às 19h
+          (domingo e segunda fechados). Confira o mapa abaixo e abra a rota
+          direto pelo Google.
         </p>
       </div>
 
@@ -46,9 +47,11 @@ export default function LocationPage() {
             <p className="mt-1.5 text-sm leading-relaxed text-ink-400">
               {address.street}
               <br />
-              {address.district} — {address.city}/{address.state}
-              <br />
               CEP {address.zip}
+            </p>
+            <p className="mt-3 text-xs text-ink-500">
+              Aguardando o estúdio complementar número do imóvel e bairro, se
+              quiserem exibi-los.
             </p>
             <a
               href={map.directionsUrl}
@@ -61,34 +64,8 @@ export default function LocationPage() {
             </a>
           </div>
 
-          <div className="card p-6">
-            <h2 className="text-sm font-semibold text-ink-50">Como chegar</h2>
-            <ul className="mt-4 space-y-3.5 text-sm text-ink-400">
-              <li className="flex gap-3">
-                <Train className="mt-0.5 size-4 shrink-0 text-brand-500" />
-                <span>
-                  Metrô <strong className="text-ink-200">Linha 1</strong> — estação
-                  Central, a 6 minutos a pé.
-                </span>
-              </li>
-              <li className="flex gap-3">
-                <UtensilsCrossed className="mt-0.5 size-4 shrink-0 text-brand-500" />
-                <span>
-                  food court da esquina serve café da manhã e almoço rápido até as 15h.
-                </span>
-              </li>
-              <li className="flex gap-3">
-                <Car className="mt-0.5 size-4 shrink-0 text-brand-500" />
-                <span>
-                  Estacionamento rotativo na <strong className="text-ink-200">
-                    Rua das Oliveiras
-                  </strong>
-                  , a 100 m. Próximo à loja há vagas na faixa amarela.
-                </span>
-              </li>
-            </ul>
-          </div>
-
+          {/* Dados reais do estúdio acabam aqui: sem estimativas de metrô,
+              estacionamento ou referências de rua que não confirmamos. */}
           <div className="card p-6">
             <h2 className="text-sm font-semibold text-ink-50">Facilidades</h2>
             <ul className="mt-3 space-y-2 text-sm text-ink-400">

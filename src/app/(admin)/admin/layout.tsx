@@ -44,7 +44,7 @@ export default async function AdminLayout({
           </Link>
 
           <div className="mt-8 flex-1">
-            <AdminNav />
+            <AdminNav role={session?.role} />
           </div>
 
           <div className="space-y-2 border-t border-ink-800 pt-4">
@@ -71,7 +71,7 @@ export default async function AdminLayout({
         {/* Conteúdo */}
         <div className="flex min-w-0 flex-1 flex-col">
           <header className="sticky top-0 z-40 flex h-14 items-center gap-4 border-b border-ink-800 bg-ink-950/90 px-5 backdrop-blur-xl lg:px-8">
-            <AdminMobileNav />
+            <AdminMobileNav role={session?.role} />
             <div className="lg:hidden">
               <span className="display text-base text-ink-50">Painel</span>
             </div>

@@ -8,7 +8,12 @@ import { contactLink } from "@/lib/whatsapp";
 export function WhatsAppFab() {
   const pathname = usePathname();
 
-  if (pathname.startsWith("/admin")) return null;
+  // No /agendar o balão é escondido: ele fica desenhado sobre o rodapé de
+  // navegação do wizard em telas estreitas e absorve os toques no canto do
+  // botão Continuar. Nessa tela os CTAs de WhatsApp já existem no conteúdo.
+  if (pathname.startsWith("/admin") || pathname.startsWith("/agendar")) {
+    return null;
+  }
 
   return (
     <a

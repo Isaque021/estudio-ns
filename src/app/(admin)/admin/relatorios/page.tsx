@@ -1,8 +1,21 @@
+import { redirect } from "next/navigation";
+
 import { AdminPageHeader, StatCard } from "@/components/admin/admin-page-header";
+import { getAdminSession } from "@/lib/auth";
 import { getDashboardReport } from "@/lib/data";
 import { formatCurrency } from "@/lib/utils";
 
 export default async function AdminReportsPage() {
+  const session = await getAdminSession();
+
+  if (!session) {
+    redirect("/admin/login");
+  }
+
+  if (session.role !== "admin") {
+    redirect("/admin/agendamentos");
+  }
+
   const report = await getDashboardReport();
 
   const maxDaily = Math.max(...report.dailyRevenue.map((day) => day.revenueCents), 1);

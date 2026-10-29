@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight, Clock, Mail, MapPin, MessageCircle, Phone } from "lucide-react";
+import { ArrowRight, Clock, MapPin, MessageCircle, Phone } from "lucide-react";
 
 import { ContactForm } from "@/components/site/contact-form";
 import { siteConfig } from "@/lib/site-config";
@@ -9,7 +9,7 @@ import { contactLink } from "@/lib/whatsapp";
 export const metadata: Metadata = {
   title: "Contato",
   description:
-    "Fale com a Barbearia Navalha pelo WhatsApp, telefone ou e-mail. Estamos na Rua das Laranjeiras, 240 — Centro.",
+    "Fale com o Estúdio NS pelo WhatsApp ou telefone. Estamos na Rua Doutor Carlos Bastos Aranha, CEP 02278-010.",
 };
 
 export default function ContactPage() {
@@ -22,8 +22,7 @@ export default function ContactPage() {
         </h1>
         <p className="mt-4 text-base leading-relaxed text-ink-400">
           Dúvida sobre serviço, preço, produto ou quer confirmar um agendamento? O
-          WhatsApp é o canal mais rápido — respondemos em poucos minutos dentro do
-          horário de funcionamento.
+          Fale com a equipe pelo WhatsApp durante o horário de funcionamento.
         </p>
       </div>
 
@@ -51,20 +50,7 @@ export default function ContactPage() {
             </span>
             <div>
               <p className="text-sm font-semibold text-ink-50">{siteConfig.contact.phone}</p>
-              <p className="text-xs text-ink-400">Ligação para a recepção</p>
-            </div>
-          </a>
-
-          <a
-            href={`mailto:${siteConfig.contact.email}`}
-            className="card card-hover flex items-center gap-4 p-6"
-          >
-            <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-ink-800 text-ink-200">
-              <Mail className="size-5" />
-            </span>
-            <div>
-              <p className="text-sm font-semibold text-ink-50">{siteConfig.contact.email}</p>
-              <p className="text-xs text-ink-400">E-mail e faturamento</p>
+              <p className="text-xs text-ink-400">Contato geral — Neto</p>
             </div>
           </a>
 
@@ -76,10 +62,7 @@ export default function ContactPage() {
               <p className="text-sm font-semibold text-ink-50">
                 {siteConfig.address.street}
               </p>
-              <p className="text-xs text-ink-400">
-                {siteConfig.address.district} — {siteConfig.address.city}/
-                {siteConfig.address.state}
-              </p>
+              <p className="text-xs text-ink-400">CEP {siteConfig.address.zip}</p>
             </div>
           </div>
 
@@ -88,8 +71,8 @@ export default function ContactPage() {
               <Clock className="size-5" />
             </span>
             <div>
-              <p className="text-sm font-semibold text-ink-50">Seg a Sex 9h — 21h</p>
-              <p className="text-xs text-ink-400">Sábado 9h — 19h · Domingo 10h — 17h</p>
+              <p className="text-sm font-semibold text-ink-50">Terça a sábado, 9h — 19h</p>
+              <p className="text-xs text-ink-400">Domingo e segunda: fechado</p>
             </div>
           </div>
         </div>
@@ -100,8 +83,8 @@ export default function ContactPage() {
           <div className="mt-6 rounded-2xl border border-ink-800 bg-ink-900/50 p-6">
             <h2 className="text-sm font-semibold text-ink-50">Prefere agendar direto?</h2>
             <p className="mt-2 text-sm leading-relaxed text-ink-400">
-              Escolha serviço, profissional, data e horário e receba a confirmação pelo
-              WhatsApp.
+              Para a barbearia, escolha serviço, profissional, data e horário.
+              A solicitação fica aguardando a confirmação da equipe no painel.
             </p>
             <Link href="/agendar" className="btn btn-primary mt-5">
               Ir para o agendamento

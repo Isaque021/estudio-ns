@@ -25,17 +25,22 @@ export function ServiceCard({ service }: { service: Service }) {
       <div className="flex flex-1 flex-col p-5">
         <div className="flex items-start justify-between gap-3">
           <h3 className="text-lg font-semibold text-ink-50">{service.name}</h3>
-          <span className="font-display shrink-0 text-lg text-brand-400">
-            {formatCurrency(service.priceCents)}
-          </span>
+          {/* Sem preço cadastrado, o card fica sem valor — nada inventado. */}
+          {service.priceCents != null && (
+            <span className="font-display shrink-0 text-lg text-brand-400">
+              {formatCurrency(service.priceCents)}
+            </span>
+          )}
         </div>
         <p className="mt-2 flex-1 text-sm leading-relaxed text-ink-400">
           {service.description}
         </p>
-        <div className="mt-4 flex items-center gap-1.5 text-xs text-ink-400">
-          <Clock className="size-3.5" />
-          {formatDuration(service.durationMin)}
-        </div>
+        {service.durationMin != null && (
+          <div className="mt-4 flex items-center gap-1.5 text-xs text-ink-400">
+            <Clock className="size-3.5" />
+            {formatDuration(service.durationMin)}
+          </div>
+        )}
       </div>
     </Link>
   );

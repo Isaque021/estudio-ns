@@ -1,38 +1,43 @@
 export const siteConfig = {
-  name: "Barbearia Navalha",
-  legalName: "Barbearia Navalha LTDA",
+  name: "Estúdio NS",
+  legalName: "Estúdio NS",
   tagline: "Corte, barba e estilo feito na tesoura.",
   description:
-    "Barbearia tradicional com atendimento clássico, professionals experientes, produtos de qualidade e agendamento online pelo WhatsApp.",
+    "Barbearia, unhas e cuidados com a beleza no Estúdio NS. Solicite horários da barbearia pelo site e combine os serviços de beleza pelo WhatsApp.",
+  // Endereço real informado pelo estúdio. Sem número do imóvel,
+  // complemento, bairro ou cidade: nada é inventado — só rua e CEP.
   address: {
-    street: "Rua das Laranjeiras, 240",
-    district: "Centro",
-    city: "São Paulo",
-    state: "SP",
-    zip: "01010-000",
+    street: "Rua Doutor Carlos Bastos Aranha",
+    zip: "02278-010",
   },
   contact: {
-    phone: "(11) 3456-7890",
-    phoneE164: "+551134567890",
-    whatsapp: process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? "5511999999999",
-    email: "contato@barbearianavalha.com.br",
-    instagram: "@barbearianavalha",
+    // Contato geral do estúdio: Neto. Reservas usam o número do profissional.
+    phone: "(11) 97558-9299",
+    phoneE164: "+5511975589299",
+    whatsapp: process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? "5511975589299",
+    email: "",
+    instagram: "",
   },
   map: {
-    // Coordenadas aproximadas da loja (Centro de São Paulo).
-    latitude: -23.5505,
-    longitude: -46.6333,
-    embedUrl:
-      "https://www.google.com/maps?q=-23.5505,-46.6333&hl=pt-BR&z=15&output=embed",
-    directionsUrl:
-      "https://www.google.com/maps/dir/?api=1&destination=-23.5505,-46.6333",
+    // A busca no mapa usa exatamente os dados reais do estúdio (rua + CEP).
+    // Sem coordenadas inventadas: com rua e CEP o Google localiza o endereço.
+    query: "Rua Doutor Carlos Bastos Aranha, CEP 02278-010",
+    embedUrl: `https://www.google.com/maps?q=${encodeURIComponent("Rua Doutor Carlos Bastos Aranha, CEP 02278-010")}&hl=pt-BR&z=15&output=embed`,
+    directionsUrl: `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent("Rua Doutor Carlos Bastos Aranha, CEP 02278-010")}`,
   },
   social: {
-    instagram: "https://instagram.com/barbearianavalha",
-    facebook: "https://facebook.com/barbearianavalha",
+    instagram: "",
+    facebook: "",
   },
 } as const;
 
+/** Linhas de endereço para exibir: só o que o estúdio realmente declarou. */
+export const addressLines: string[] = [
+  siteConfig.address.street,
+  `CEP ${siteConfig.address.zip}`,
+];
+
+// Padrão do estúdio: terça a sábado, 09:00–19:00; domingo e segunda fechados.
 export const businessHours: Array<{
   weekday: number;
   label: string;
@@ -41,12 +46,12 @@ export const businessHours: Array<{
   closesAt: string;
   closed: boolean;
 }> = [
-  { weekday: 0, label: "Domingo", shortLabel: "Dom", opensAt: "10:00", closesAt: "17:00", closed: false },
-  { weekday: 1, label: "Segunda-feira", shortLabel: "Seg", opensAt: "09:00", closesAt: "20:00", closed: false },
-  { weekday: 2, label: "Terça-feira", shortLabel: "Ter", opensAt: "09:00", closesAt: "20:00", closed: false },
-  { weekday: 3, label: "Quarta-feira", shortLabel: "Qua", opensAt: "09:00", closesAt: "20:00", closed: false },
-  { weekday: 4, label: "Quinta-feira", shortLabel: "Qui", opensAt: "09:00", closesAt: "21:00", closed: false },
-  { weekday: 5, label: "Sexta-feira", shortLabel: "Sex", opensAt: "09:00", closesAt: "21:00", closed: false },
+  { weekday: 0, label: "Domingo", shortLabel: "Dom", opensAt: "", closesAt: "", closed: true },
+  { weekday: 1, label: "Segunda-feira", shortLabel: "Seg", opensAt: "", closesAt: "", closed: true },
+  { weekday: 2, label: "Terça-feira", shortLabel: "Ter", opensAt: "09:00", closesAt: "19:00", closed: false },
+  { weekday: 3, label: "Quarta-feira", shortLabel: "Qua", opensAt: "09:00", closesAt: "19:00", closed: false },
+  { weekday: 4, label: "Quinta-feira", shortLabel: "Qui", opensAt: "09:00", closesAt: "19:00", closed: false },
+  { weekday: 5, label: "Sexta-feira", shortLabel: "Sex", opensAt: "09:00", closesAt: "19:00", closed: false },
   { weekday: 6, label: "Sábado", shortLabel: "Sáb", opensAt: "09:00", closesAt: "19:00", closed: false },
 ];
 

@@ -3,8 +3,12 @@ export type Service = {
   name: string;
   slug: string;
   description: string;
-  priceCents: number;
-  durationMin: number;
+  /** Preço em centavos. Quando não cadastrado, nada é exibido nem cobrado —
+   * e o agendamento é bloqueado até o cadastro existir. */
+  priceCents: number | null;
+  /** Duração em minutos. Sem ela não dá para encaixar o horário na agenda:
+   * slots não são oferecidos e a reserva é recusada no servidor. */
+  durationMin: number | null;
   category: string;
   imageUrl: string;
   active: boolean;
@@ -80,6 +84,48 @@ export type Booking = {
   notes: string | null;
   priceCents: number;
   createdAt: string;
+  /** Duração do atendimento gravada na reserva (min). Serve para conferir
+   * sobreposições mesmo se o serviço mudar de duração depois. */
+  durationMin?: number;
+  /** Chave gerada no navegador: o mesmo envio repetido não cria reserva nova. */
+  idempotencyKey?: string | null;
+};
+
+/** Expediente semanal individual (sobrepõe o padrão do estúdio por dia). */
+export type ProfessionalHour = {
+  professionalId: string;
+  weekday: number;
+  opensAt: string | null;
+  closesAt: string | null;
+  closed: boolean;
+};
+
+export const SCHEDULE_EXCEPTION_KINDS = [
+  "open-late",
+  "close-early",
+  "extra-window",
+  "block-range",
+  "day-off",
+] as const;
+
+export type ScheduleExceptionKind = (typeof SCHEDULE_EXCEPTION_KINDS)[number];
+
+/** Ajuste pontual de um dia: entrar mais tarde, sair mais cedo, horário
+ * extra, bloqueio de intervalo ou folga do dia inteiro. */
+export type ScheduleException = {
+  id: string;
+  professionalId: string;
+  date: string;
+  kind: ScheduleExceptionKind;
+  startAt: string | null;
+  endAt: string | null;
+  note: string | null;
+  createdAt: string;
+};
+
+/** Configuração de solicitações (prazo de guarda do horário). */
+export type AgendaSettings = {
+  holdMinutes: number;
 };
 
 export const ORDER_STATUSES = [

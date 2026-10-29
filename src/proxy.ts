@@ -13,18 +13,11 @@ function withPathname(headers: Headers, pathname: string): Headers {
   return next;
 }
 
-/**
- * Protege o painel administrativo.
- *
- * Sem as variáveis do Supabase o app roda em modo demonstração e o painel
- * fica liberado (os dados são locais). Com o Supabase configurado, só entra
- * quem estiver autenticado.
- */
 export async function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
 
   if (!pathname.startsWith("/admin")) return NextResponse.next();
-  if (PUBLIC_ADMIN_PATHS.some((path) => pathname.startsWith(path))) {
+  if (PUBLIC_ADMIN_PATHS.some((path) => pathname === path)) {
     return NextResponse.next({
       request: { headers: withPathname(request.headers, pathname) },
     });

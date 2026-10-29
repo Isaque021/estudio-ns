@@ -122,17 +122,21 @@ body::before {
     font-weight: 600;
     font-size: 0.875rem;
     padding: 0.75rem 1.5rem;
+    box-shadow: 0 2px 6px -2px rgba(22, 22, 26, 0.35);
     transition:
       background-color 0.2s ease,
       color 0.2s ease,
       border-color 0.2s ease,
-      transform 0.15s ease;
+      transform 0.15s ease,
+      box-shadow 0.15s ease;
     cursor: pointer;
     white-space: nowrap;
   }
 
+  /* Pressão curta ao clicar: sombra encolhe junto do deslocamento. */
   .btn:active {
-    transform: translateY(1px);
+    transform: translateY(2px);
+    box-shadow: 0 1px 2px -1px rgba(22, 22, 26, 0.3);
   }
 
   .btn:disabled {
@@ -263,5 +267,180 @@ body::before {
 
   .hide-scrollbar::-webkit-scrollbar {
     display: none;
+  }
+}
+
+/* -------------------------------------------------------------------- */
+/* Efeitos sutis da home: entrada de títulos, foco visível,              */
+/* elevação dos cartões de serviço e profundidade da placa da logo.      */
+/* -------------------------------------------------------------------- */
+@keyframes ns-rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.rise {
+  animation: ns-rise 0.6s ease-out both;
+}
+
+.rise-2 {
+  animation: ns-rise 0.6s ease-out 0.18s both;
+}
+
+.rise-3 {
+  animation: ns-rise 0.6s ease-out 0.36s both;
+}
+
+/* Elevação discreta em hover e foco (cartões de serviço). */
+.lift {
+  transition:
+    transform 0.25s ease,
+    box-shadow 0.25s ease;
+}
+
+.lift:hover,
+.lift:focus-visible {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 24px -14px rgba(22, 22, 26, 0.4);
+}
+
+/* Foco visível para navegação por teclado nos botões e links. */
+:is(a, button):focus-visible {
+  outline: 2px solid #8f5659;
+  outline-offset: 2px;
+}
+
+/* Círculo da logo: a arte preenche o círculo inteiro — recorte feito
+   pelo border-radius + overflow hidden (só o fundo excedente dos
+   cantos sai, o monograma e a palavra STUDIO ficam). Sombras externas
+   suaves e inclinação leve conforme o mouse (perspective + rotate),
+   profundidade feita só em CSS. As variáveis chegam pelo LogoTilt,
+   atualizadas só em desktop com mouse preciso; em toque, sem
+   JavaScript ou com prefers-reduced-motion, o círculo fica reto. */
+.logo-plate {
+  --plate-rotate-x: 0deg;
+  --plate-rotate-y: 0deg;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 50%;
+  background-color: #c8b5a7;
+  transform: perspective(700px) rotateX(var(--plate-rotate-x))
+    rotateY(var(--plate-rotate-y));
+  transition: transform 0.25s ease-out;
+  box-shadow:
+    inset 0 1px 2px rgba(247, 242, 236, 0.45),
+    inset 0 -2px 4px rgba(22, 22, 26, 0.1),
+    0 2px 5px rgba(22, 22, 26, 0.25),
+    0 14px 28px -14px rgba(22, 22, 26, 0.32);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rise,
+  .rise-2,
+  .rise-3 {
+    animation: none;
+  }
+
+  .logo-plate {
+    transform: none;
+    transition: none;
+  }
+
+  .lift:hover,
+  .lift:focus-visible {
+    transform: none;
+  }
+}
+
+/* Hover sequenciado por letra nos títulos principais (SplitTitle).
+   Ativo só em dispositivos com mouse; o texto completo permanece
+   disponível para leitores de tela via sr-only no componente. */
+@media (hover: hover) and (pointer: fine) {
+  /* Cor padrão do hover por letra: rosé escuro (área Unhas & Beleza). */
+  .title-split {
+    --title-hover-color: #6f4245;
+  }
+
+  /* Variante da área Barbearia: letras sobem em preto. */
+  .title-split.title-hover-ink {
+    --title-hover-color: #16161a;
+  }
+
+  /* Variante do tema rosa da área Unhas & Beleza: rosa fechado, sem neon. */
+  .title-split.title-hover-beauty {
+    --title-hover-color: #8f4660;
+  }
+
+  /* Título sobre foto escura: letras brancas — o hover é só o movimento. */
+  .title-split.title-hover-dark {
+    --title-hover-color: #f7f2ec;
+  }
+
+  /* Título sobre foto escura com detalhes rosé. */
+  .title-split.title-hover-dark-rose {
+    --title-hover-color: #e7b8bb;
+  }
+
+  .title-hover .title-letter {
+    display: inline-block;
+    transition:
+      transform 0.25s ease,
+      color 0.25s ease;
+    transition-delay: calc(var(--letter-index, 0) * 16ms);
+  }
+
+  .title-hover:hover .title-letter {
+    transform: translateY(-0.08em);
+    color: var(--title-hover-color);
+  }
+
+  /* Profundidade discreta nas camadas decorativas dos painéis-entrada:
+     só as camadas de fundo se deslocam (transform), o conteúdo fica
+     parado. Sem interação por mouse, os layers não se movem. */
+  .depth-a,
+  .depth-b {
+    transition: transform 0.5s ease;
+  }
+
+  .group:hover .depth-a {
+    transform: translate3d(8px, 6px, 0);
+  }
+
+  .group:hover .depth-b {
+    transform: translate3d(-6px, 4px, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .title-hover .title-letter {
+    transition: none;
+  }
+
+  .title-hover:hover .title-letter {
+    transform: none;
+  }
+
+  .logo-plate {
+    transform: none;
+    transition: none;
+  }
+
+  .depth-a,
+  .depth-b {
+    transform: none;
+    transition: none;
+  }
+
+  .btn,
+  .btn:active {
+    transform: none;
+    transition: none;
   }
 }

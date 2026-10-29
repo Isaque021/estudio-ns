@@ -27,11 +27,14 @@ export function ServicesManager({ services }: { services: Service[] }) {
     setSavingId(service.id);
     setMessage(null);
     startTransition(async () => {
+      // Campo vazio continua nulo: o que estava sem cadastro não vira 0.
+      const rawPrice = valueFor(service, "priceCents");
+      const rawDuration = valueFor(service, "durationMin");
       const result = await updateService(service.id, {
         name: String(valueFor(service, "name")),
         description: String(valueFor(service, "description")),
-        priceCents: Number(valueFor(service, "priceCents")),
-        durationMin: Number(valueFor(service, "durationMin")),
+        priceCents: rawPrice == null ? null : Number(rawPrice),
+        durationMin: rawDuration == null ? null : Number(rawDuration),
         category: String(valueFor(service, "category")),
         active: Boolean(valueFor(service, "active")),
       });
@@ -104,14 +107,23 @@ export function ServicesManager({ services }: { services: Service[] }) {
                 <div className="grid w-full shrink-0 grid-cols-2 gap-3 sm:w-64">
                   <div>
                     <label className="label">Preço (R$)</label>
+                    {/* Campo vazio = serviço sem preço no cadastro (null).
+                        O número 0 não deve ser usado como "sem preço". */}
                     <input
                       type="number"
                       step="0.01"
                       min="0"
-                      value={(Number(valueFor(service, "priceCents")) / 100).toFixed(2)}
+                      value={
+                        valueFor(service, "priceCents") == null
+                          ? ""
+                          : (valueFor(service, "priceCents")! / 100).toFixed(2)
+                      }
                       onChange={(event) =>
                         setDraft(service.id, {
-                          priceCents: Math.round(Number(event.target.value) * 100),
+                          priceCents:
+                            event.target.value === ""
+                              ? null
+                              : Math.round(Number(event.target.value) * 100),
                         })
                       }
                       className="input"
@@ -123,9 +135,18 @@ export function ServicesManager({ services }: { services: Service[] }) {
                       type="number"
                       min="5"
                       step="5"
-                      value={Number(valueFor(service, "durationMin"))}
+                      value={
+                        valueFor(service, "durationMin") == null
+                          ? ""
+                          : valueFor(service, "durationMin")!
+                      }
                       onChange={(event) =>
-                        setDraft(service.id, { durationMin: Number(event.target.value) })
+                        setDraft(service.id, {
+                          durationMin:
+                            event.target.value === ""
+                              ? null
+                              : Number(event.target.value),
+                        })
                       }
                       className="input"
                     />

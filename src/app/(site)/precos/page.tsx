@@ -51,12 +51,17 @@ export default async function PricesPage() {
                     </p>
                     <p className="mt-2 flex items-center gap-1.5 text-xs text-ink-500">
                       <Clock className="size-3.5" />
-                      {formatDuration(service.durationMin)}
+                      {/* Duração só é exibida quando está no cadastro. */}
+                      {service.durationMin != null
+                        ? formatDuration(service.durationMin)
+                        : "duração a combinar"}
                     </p>
                   </div>
                   <div className="flex items-center gap-4 sm:flex-col sm:items-end sm:gap-1">
                     <span className="font-display text-2xl text-brand-400">
-                      {formatCurrency(service.priceCents)}
+                      {service.priceCents != null
+                        ? formatCurrency(service.priceCents)
+                        : "A definir"}
                     </span>
                     <Link
                       href={`/agendar?servico=${service.slug}`}

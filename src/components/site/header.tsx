@@ -1,12 +1,22 @@
 "use client";
 
-import { Menu, Phone, Scissors, ShoppingBag, X } from "lucide-react";
+import { Menu, Scissors, ShoppingBag, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
-import { navigation, siteConfig } from "@/lib/site-config";
 import { useCart } from "@/components/store/cart-context";
+import { siteConfig } from "@/lib/site-config";
+
+const navigation = [
+  { href: "/servicos", label: "Serviços" },
+  { href: "/profissionais", label: "Profissionais" },
+  { href: "/localizacao", label: "Localização" },
+  { href: "/admin/login", label: "Área da equipe" },
+];
+
+const bookingButton =
+  "inline-flex min-h-11 items-center justify-center rounded-full border border-[#e4b38e]/40 bg-gradient-to-b from-[#dfad85] to-[#ba7952] px-5 py-2.5 text-sm font-semibold text-[#181310] shadow-[inset_0_1px_0_rgba(255,255,255,0.4),0_4px_0_#754b34,0_8px_18px_rgba(0,0,0,0.25)] transition-[transform,box-shadow,filter] hover:brightness-110 active:translate-y-0.5 active:shadow-[inset_0_1px_0_rgba(255,255,255,0.3),0_2px_0_#754b34] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#dfad85] motion-reduce:transition-none motion-reduce:active:translate-y-0";
 
 export function SiteHeader() {
   const pathname = usePathname();
@@ -14,9 +24,32 @@ export function SiteHeader() {
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
-    document.body.style.overflow = open ? "hidden" : "";
+    if (!open) return;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setOpen(false);
+      }
+    }
+
+    function onResize(event: MediaQueryListEvent) {
+      if (event.matches) {
+        setOpen(false);
+      }
+    }
+
+    const desktop = window.matchMedia("(min-width: 1024px)");
+
+    window.addEventListener("keydown", onKeyDown);
+    desktop.addEventListener("change", onResize);
+
     return () => {
-      document.body.style.overflow = "";
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", onKeyDown);
+      desktop.removeEventListener("change", onResize);
     };
   }, [open]);
 
@@ -24,34 +57,47 @@ export function SiteHeader() {
     setOpen(false);
   }
 
+  function isActive(href: string) {
+    return pathname === href || pathname.startsWith(`${href}/`);
+  }
+
+  const cartLabel = hydrated
+    ? `Carrinho com ${totalItems} itens`
+    : "Carrinho";
+
   return (
-    <header className="sticky top-0 z-50 border-b border-ink-800 bg-ink-950/85 backdrop-blur-xl">
-      <div className="container-page flex h-16 items-center justify-between gap-4">
-        <Link href="/" className="group flex items-center gap-2.5">
-          <span className="flex size-9 items-center justify-center rounded-full bg-brand-500/15 text-brand-400 transition-colors group-hover:bg-brand-500/25">
-            <Scissors className="size-4.5" />
+    <header className="sticky top-0 z-50 border-b border-white/10 bg-[#17181b]/95 text-[#f7f4ef] backdrop-blur-xl">
+      <div className="container-page flex h-[76px] items-center justify-between gap-3">
+        <Link
+          href="/"
+          onClick={closeMenu}
+          className="group flex min-w-0 items-center gap-2.5 rounded-lg focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#dfad85]"
+        >
+          <span className="flex size-10 shrink-0 items-center justify-center rounded-full border border-[#dfad85]/30 bg-gradient-to-br from-[#37312d] to-[#1d1c1c] text-[#dfad85] shadow-[inset_0_1px_0_rgba(255,255,255,0.1),0_4px_10px_rgba(0,0,0,0.25)]">
+            <Scissors aria-hidden="true" className="size-5" />
           </span>
-          <span className="leading-none">
-            <span className="display block text-lg text-ink-50">{siteConfig.name}</span>
-            <span className="hidden text-[0.6rem] tracking-[0.28em] text-ink-400 uppercase sm:block">
-              Barbearia clássica
-            </span>
+
+          <span className="display truncate text-lg tracking-wide text-[#f7f4ef] sm:text-xl">
+            {siteConfig.name}
           </span>
         </Link>
 
-        <nav className="hidden items-center gap-1 lg:flex">
+        <nav
+          aria-label="Navegação principal"
+          className="hidden items-center gap-2 lg:flex"
+        >
           {navigation.map((item) => {
-            const active =
-              item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
+            const active = isActive(item.href);
+
             return (
               <Link
                 key={item.href}
                 href={item.href}
-                className={`rounded-full px-3 py-2 text-sm transition-colors ${
-                  active
-                    ? "text-brand-300"
-                    : "text-ink-300 hover:text-ink-50"
-                }`}
+                aria-current={active ? "page" : undefined}
+                className={`rounded-full px-4 py-2 text-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#dfad85] ${active
+                  ? "bg-white/5 font-medium text-[#dfad85]"
+                  : "text-[#d0cdc8] hover:bg-white/5 hover:text-white"
+                  }`}
               >
                 {item.label}
               </Link>
@@ -59,68 +105,88 @@ export function SiteHeader() {
           })}
         </nav>
 
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-2 sm:gap-3">
           <Link
             href="/carrinho"
-            aria-label={`Carrinho com ${totalItems} itens`}
-            className="relative flex size-10 items-center justify-center rounded-full border border-ink-800 text-ink-200 transition-colors hover:border-brand-500/60 hover:text-brand-300"
+            onClick={closeMenu}
+            aria-label={cartLabel}
+            className="relative flex size-11 items-center justify-center rounded-full border border-white/15 bg-white/[0.03] text-[#e8e3dd] transition-colors hover:border-[#dfad85]/60 hover:text-[#dfad85] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#dfad85]"
           >
-            <ShoppingBag className="size-4.5" />
+            <ShoppingBag aria-hidden="true" className="size-5" />
+
             {hydrated && totalItems > 0 && (
-              <span className="absolute -right-1 -top-1 flex size-5 items-center justify-center rounded-full bg-brand-500 text-[0.65rem] font-bold text-ink-950">
+              <span className="absolute -right-1 -top-1 flex min-w-5 items-center justify-center rounded-full bg-[#dfad85] px-1 py-0.5 text-[0.65rem] font-bold text-[#181310]">
                 {totalItems}
               </span>
             )}
           </Link>
 
-          <a
-            href={`tel:${siteConfig.contact.phoneE164}`}
-            className="hidden items-center gap-2 rounded-full border border-ink-800 px-4 py-2 text-sm text-ink-200 transition-colors hover:border-brand-500/60 hover:text-brand-300 md:inline-flex"
+          <Link
+            href="/agendar"
+            onClick={closeMenu}
+            className={`${bookingButton} hidden sm:inline-flex`}
           >
-            <Phone className="size-4" />
-            {siteConfig.contact.phone}
-          </a>
-
-          <Link href="/agendar" className="btn btn-primary hidden sm:inline-flex">
             Agendar
           </Link>
 
           <button
             type="button"
             onClick={() => setOpen((value) => !value)}
-            aria-label={open ? "Fechar menu" : "Abrir menu"}
             aria-expanded={open}
-            className="flex size-10 items-center justify-center rounded-full border border-ink-800 text-ink-200 lg:hidden"
+            aria-controls="site-mobile-nav"
+            aria-label={open ? "Fechar menu" : "Abrir menu"}
+            className="flex size-11 items-center justify-center rounded-full border border-white/15 text-[#f7f4ef] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#dfad85] lg:hidden"
           >
-            {open ? <X className="size-5" /> : <Menu className="size-5" />}
+            {open ? (
+              <X aria-hidden="true" className="size-5" />
+            ) : (
+              <Menu aria-hidden="true" className="size-5" />
+            )}
           </button>
         </div>
       </div>
 
       {open && (
-        <div className="border-t border-ink-800 bg-ink-950/98 lg:hidden">
-          <nav className="container-page flex flex-col py-4">
+        <div
+          id="site-mobile-nav"
+          className="max-h-[calc(100dvh-76px)] overflow-y-auto border-t border-white/10 bg-[#1d1e22] lg:hidden"
+        >
+          <nav
+            aria-label="Navegação no celular"
+            className="container-page flex flex-col py-5"
+          >
             {navigation.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
                 onClick={closeMenu}
-                className="border-b border-ink-900 py-3 text-base text-ink-200 last:border-0"
+                aria-current={isActive(item.href) ? "page" : undefined}
+                className={`rounded-lg border-b border-white/10 px-2 py-3.5 text-base focus-visible:outline-2 focus-visible:outline-[#dfad85] ${isActive(item.href)
+                  ? "font-medium text-[#dfad85]"
+                  : "text-[#e8e3dd] hover:text-[#dfad85]"
+                  }`}
               >
                 {item.label}
               </Link>
             ))}
-            <div className="mt-4 flex flex-col gap-2">
-              <Link href="/agendar" onClick={closeMenu} className="btn btn-primary w-full">
+
+            <Link
+              href="/carrinho"
+              onClick={closeMenu}
+              className="rounded-lg border-b border-white/10 px-2 py-3.5 text-base text-[#e8e3dd] focus-visible:outline-2 focus-visible:outline-[#dfad85]"
+            >
+              Carrinho
+              {hydrated && totalItems > 0 ? ` (${totalItems})` : ""}
+            </Link>
+
+            <div className="pb-2 pt-6">
+              <Link
+                href="/agendar"
+                onClick={closeMenu}
+                className={`${bookingButton} w-full`}
+              >
                 Agendar horário
               </Link>
-              <a
-                href={`tel:${siteConfig.contact.phoneE164}`}
-                onClick={closeMenu}
-                className="btn btn-ghost w-full"
-              >
-                {siteConfig.contact.phone}
-              </a>
             </div>
           </nav>
         </div>

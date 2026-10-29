@@ -8,7 +8,7 @@ import { getProfessionals, getServices } from "@/lib/data";
 export const metadata: Metadata = {
   title: "Equipe",
   description:
-    "Conheça os barbeiros e coloristas da nossa equipe. Escolha quem você quer para o seu atendimento.",
+    "Conheça a equipe do Estúdio NS e os serviços de barbearia, unhas e beleza.",
 };
 
 export default async function TeamPage() {
@@ -19,11 +19,11 @@ export default async function TeamPage() {
       <div className="max-w-2xl">
         <p className="eyebrow">Equipe</p>
         <h1 className="display mt-4 text-4xl text-ink-50 sm:text-5xl">
-          Quem senta você na cadeira
+          Conheça nossa equipe
         </h1>
         <p className="mt-4 text-base leading-relaxed text-ink-400">
-          Cada profissional tem uma técnica e uma especialidade. Escolha o nome que você
-          prefere no momento do agendamento — ou deixe a gente escolher por você.
+          Conheça os profissionais e suas especialidades. Para a barbearia, solicite
+          um horário pelo site. Para unhas e beleza, combine diretamente pelo WhatsApp.
         </p>
       </div>
 
@@ -36,25 +36,23 @@ export default async function TeamPage() {
       <div className="mt-16 grid gap-6 lg:grid-cols-3">
         <div className="card p-7">
           <Award className="size-6 text-brand-400" />
-          <h2 className="mt-4 text-lg font-semibold text-ink-50">12 anos de casa</h2>
+          <h2 className="mt-4 text-lg font-semibold text-ink-50">Barbearia</h2>
           <p className="mt-2 text-sm leading-relaxed text-ink-400">
-            Todos os profissionais passaram pela formação interna da barbearia, com
-            pega, finalização e atendimento.
+            Consulte os serviços de Isaque e Neto e solicite seu horário pelo site.
           </p>
         </div>
         <div className="card p-7">
           <Star className="size-6 text-brand-400" />
-          <h2 className="mt-4 text-lg font-semibold text-ink-50">4.9 de avaliação</h2>
+          <h2 className="mt-4 text-lg font-semibold text-ink-50">Unhas e beleza</h2>
           <p className="mt-2 text-sm leading-relaxed text-ink-400">
-            Mais de 3 mil atendimentos avaliados pelos clientes no Google e Instagram.
+            Combine os serviços de Isabelly e Raquel diretamente pelo WhatsApp.
           </p>
         </div>
         <div className="card p-7">
           <ArrowRight className="size-6 text-brand-400" />
-          <h2 className="mt-4 text-lg font-semibold text-ink-50">Escolha no agendamento</h2>
+          <h2 className="mt-4 text-lg font-semibold text-ink-50">Confirmação pela equipe</h2>
           <p className="mt-2 text-sm leading-relaxed text-ink-400">
-            O profissional aparece como opção na hora de marcar. Sem telefone, sem
-            espera.
+            As solicitações feitas pelo site ficam aguardando a confirmação da equipe.
           </p>
         </div>
       </div>
@@ -77,9 +75,13 @@ export default async function TeamPage() {
                   <tr key={service.id}>
                     <td className="py-3 font-medium text-ink-100">{service.name}</td>
                     <td className="py-3 text-ink-400">
-                      {team.length > 0 ? team.map((p) => p.name).join(", ") : "Toda a equipe"}
+                      {team.length > 0
+                        ? team.map((p) => p.name).join(", ")
+                        : "A combinar pelo WhatsApp"}
                     </td>
-                    <td className="py-3 text-right text-ink-400">{service.durationMin} min</td>
+                    <td className="py-3 text-right text-ink-400">
+                      {service.durationMin != null ? `${service.durationMin} min` : "A definir"}
+                    </td>
                   </tr>
                 );
               })}
@@ -90,8 +92,11 @@ export default async function TeamPage() {
 
       <div className="mt-12 text-center">
         <Link href="/agendar" className="btn btn-primary">
-          Escolher profissional e agendar
+          Agendar barbearia
           <ArrowRight className="size-4" />
+        </Link>
+        <Link href="/beleza" className="btn btn-ghost mt-3 sm:ml-3 sm:mt-0">
+          Combinar unhas e beleza
         </Link>
       </div>
     </div>

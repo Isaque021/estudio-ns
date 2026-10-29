@@ -1,5 +1,6 @@
 import { siteConfig } from "@/lib/site-config";
 import { formatCurrency } from "@/lib/utils";
+import { isSupabaseConfigured } from "@/lib/supabase/client";
 import type { Booking, Order, Product } from "@/lib/types";
 
 const WHATSAPP_BASE = "https://wa.me";
@@ -8,8 +9,14 @@ export function whatsappNumber(): string {
   return (process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? siteConfig.contact.whatsapp).replace(/\D/g, "");
 }
 
-export function buildWhatsAppLink(message: string): string {
-  return `${WHATSAPP_BASE}/${whatsappNumber()}?text=${encodeURIComponent(message)}`;
+/**
+ * Link do WhatsApp. Sem `phone` (número em dígitos E164) cai no contato
+ * geral da configuração. Flows de reserva passam o número do profissional
+ * escolhido — a solicitação abre no chat de quem vai atender.
+ */
+export function buildWhatsAppLink(message: string, phone?: string): string {
+  const target = (phone ?? whatsappNumber()).replace(/\D/g, "");
+  return `${WHATSAPP_BASE}/${target}?text=${encodeURIComponent(message)}`;
 }
 
 export function genericContactMessage(): string {
@@ -19,8 +26,34 @@ export function genericContactMessage(): string {
   );
 }
 
-export function contactLink(message?: string): string {
-  return buildWhatsAppLink(message ?? genericContactMessage());
+/**
+ * wa.me exige o DDI. Telefones do cliente chegam do formulário sem "55"
+ * (só DDD + número). Completa o DDI brasileiro quando faltar, sem trocar
+ * nenhum dígito informado.
+ */
+export function ensureDdi(phoneDigits: string): string {
+  const n = phoneDigits.replace(/\D/g, "");
+  if (n.length === 10 || n.length === 11) return `55${n}`;
+  return n;
+}
+
+/** Fluxos gerais (contato, loja, dúvidas) continuam no número geral.
+ * Fluxos de reserva podem apontar para o profissional com `phone`. */
+export function contactLink(message?: string, phone?: string): string {
+  return buildWhatsAppLink(message ?? genericContactMessage(), phone);
+}
+
+/**
+ * Link público de gestão de uma reserva, p/ abrir no site e confirmar ou
+ * recusar com login. Só é gerado com a URL base configurada no ambiente
+ * (NEXT_PUBLIC_SITE_URL) E com banco/login ativos — nunca um localhost/IP
+ * chutado, e nunca vivo em modo demonstração.
+ */
+export function bookingManageLink(code: string): string | null {
+  if (!isSupabaseConfigured()) return null;
+  const raw = process.env.NEXT_PUBLIC_SITE_URL?.trim().replace(/\/+$/, "");
+  if (!raw) return null;
+  return `${raw}/gerenciar/${encodeURIComponent(code)}`;
 }
 
 export function bookingRequestMessage(booking: {
@@ -35,7 +68,7 @@ export function bookingRequestMessage(booking: {
   notes?: string | null;
 }): string {
   const lines = [
-    `Olá, ${siteConfig.name}! 👋`,
+       `Olá, ${siteConfig.name}!`,
     "",
     "Acabei de fazer um agendamento pelo site e gostaria de confirmar a reserva.",
     "",
@@ -51,6 +84,14 @@ export function bookingRequestMessage(booking: {
 
   if (booking.notes) {
     lines.push(`*Observações:* ${booking.notes}`);
+  }
+
+  const manageUrl = bookingManageLink(booking.code);
+  if (manageUrl) {
+    // Link em linha própria e sem marcação: URL completa, clicável no
+    // WhatsApp e sem pontuação colada no fim.
+    lines.push("Gerenciar esta reserva no site:");
+    lines.push(manageUrl);
   }
 
   lines.push("", "Podem confirmar, por favor? Obrigado!");

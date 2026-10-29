@@ -1,11 +1,15 @@
 -- =============================================================================
---  Barbearia Navalha — schema PostgreSQL (Supabase)
+--  Estúdio NS — schema PostgreSQL (Supabase)
 -- =============================================================================
---  Como aplicar:
+--  Como aplicar (pará um projeto NOVO, nesta ordem):
 --    1. Crie um projeto em https://supabase.com/dashboard
---    2. Abra o "SQL Editor" e execute este arquivo inteiro
+--    2. No "SQL Editor", execute nesta ordem:
+--         a) supabase/schema.sql                      (estrutura + permissões)
+--         b) supabase/migrations/0002_schedule_and_holds.sql   (agenda/holds)
+--         c) supabase/migrations/0003_services_nullable_values.sql
+--         d) supabase/seed.sql                        (catálogo/equipe reais)
 --    3. Copie as chaves (URL / anon key / service_role) para o .env.local
---    4. (Opcional) Execute `supabase/seed.sql` para popular o banco
+--  NÃO destrutivo: todos os passos podem ser reexecutados (idempotentes).
 -- =============================================================================
 
 create extension if not exists "pgcrypto";
@@ -106,6 +110,10 @@ create table if not exists public.bookings (
   status           booking_status not null default 'pending',
   notes            text,
   price_cents      integer        not null default 0,
+  -- Duração congelada no momento da reserva (0002 preenche/anexa regras).
+  duration_minutes integer,
+  -- Reenvio do mesmo formulário não cria reserva nova (0002).
+  idempotency_key  text,
   confirmed_at     timestamptz,
   created_at       timestamptz    not null default now()
 );
@@ -114,7 +122,10 @@ create index if not exists bookings_date_idx on public.bookings (scheduled_date)
 create index if not exists bookings_status_idx on public.bookings (status);
 create index if not exists bookings_client_idx on public.bookings (client_id);
 
--- Evita duplicidade de horário para o mesmo profissional.
+-- Barreira imediata contra o MESMO horário reservado duas vezes para o
+-- mesmo profissional. Sobreposição de INTERVALOS (durações diferentes) é
+-- garantida pelo banco no 0002: constraint de exclusão (GiST) + gatilho
+-- com advisory lock e regra de expiração da pendência.
 create unique index if not exists bookings_slot_unique
   on public.bookings (professional_id, scheduled_date, scheduled_time)
   where status in ('pending', 'confirmed');
@@ -191,6 +202,45 @@ create table if not exists public.admin_users (
 );
 
 -- -----------------------------------------------------------------------------
+--  Helpers de papel (consultam o cadastro REAL de admin_users)
+-- -----------------------------------------------------------------------------
+-- Funções SECURITY DEFINER STABLE: dentro de políticas de RLS elas passam
+-- a ler admin_users sem depender de políticas recursivas. Execução fica
+-- restrita a authenticated/service_role (revoke/grant abaixo).
+create or replace function public.is_admin_user()
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select exists (
+    select 1 from public.admin_users au
+    where au.id = auth.uid() and au.role = 'admin'
+  );
+$$;
+
+create or replace function public.is_staff_user()
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select exists (
+    select 1 from public.admin_users au
+    where au.id = auth.uid()
+  );
+$$;
+
+revoke execute on function public.is_admin_user() from public;
+revoke execute on function public.is_staff_user() from public;
+-- anon também executa: políticas públicas (catálogo ativo/checagem de
+-- admin) avaliam essas funções com os privilégios do papel consultante.
+grant execute on function public.is_admin_user() to anon, authenticated, service_role;
+grant execute on function public.is_staff_user() to anon, authenticated, service_role;
+
+-- -----------------------------------------------------------------------------
 --  Row Level Security
 -- -----------------------------------------------------------------------------
 alter table public.services       enable row level security;
@@ -206,13 +256,16 @@ alter table public.stock_movements enable row level security;
 alter table public.admin_users    enable row level security;
 
 -- Leitura pública do catálogo -------------------------------------------------
+-- Qualquer visitante (anon) lê o que é público: serviços, equipe e produtos
+-- ATIVOS, galeria e expediente. Internos do painel exigem cadastro de
+-- equipe real (tabela admin_users), nunca "qualquer usuário autenticado".
 drop policy if exists "public read active services" on public.services;
 create policy "public read active services" on public.services
-  for select using (active or auth.role() = 'authenticated');
+  for select using (active);
 
 drop policy if exists "public read active professionals" on public.professionals;
 create policy "public read active professionals" on public.professionals
-  for select using (active or auth.role() = 'authenticated');
+  for select using (active);
 
 drop policy if exists "public read gallery" on public.gallery;
 create policy "public read gallery" on public.gallery for select using (true);
@@ -222,26 +275,27 @@ create policy "public read business hours" on public.business_hours for select u
 
 drop policy if exists "public read active products" on public.products;
 create policy "public read active products" on public.products
-  for select using (active or auth.role() = 'authenticated');
+  for select using (active);
 
--- Qualquer visitante pode criar um pedido/agendamento (sempre "pending") ------
+-- O público NÃO lê pedidos nem reservas --------------------------------------
+-- (a política antiga "public read own orders" expunha TODOS os pedidos:
+-- client_phone é sempre preenchido, então a condição nunca restringia nada.
+-- O site inteiro escreve e lê internos por service_role; clientes não têm
+-- portal de login.)
+
+-- O público NÃO insere direto (defesa contra pedidos/reservas forjados) -----
+-- Toda criação de reserva/pedido passa pelo servidor com service_role, que
+-- valida habilitação profissional, expediente e conflito de agenda ANTES de
+-- gravar. Deixar o anon inserir dispensava essas validações.
 drop policy if exists "public create bookings" on public.bookings;
-create policy "public create bookings" on public.bookings
-  for insert to anon, authenticated with check (status = 'pending');
-
 drop policy if exists "public create orders" on public.orders;
-create policy "public create orders" on public.orders
-  for insert to anon, authenticated with check (status = 'pending');
 
-drop policy if exists "public read own orders" on public.orders;
-create policy "public read own orders" on public.orders
-  for select to anon, authenticated using (client_phone is not null);
-
--- Painel: acesso total para usuários autenticados ----------------------------
+-- Painel: papéis reais (admin_users), não "qualquer autenticado" -------------
 do $$
 declare
   tbl text;
 begin
+  -- Leitura interna: qualquer cadastro de equipe (staff) lê.
   foreach tbl in array array[
     'services', 'professionals', 'gallery', 'business_hours', 'products',
     'clients', 'bookings', 'orders', 'order_items', 'stock_movements'
@@ -249,9 +303,24 @@ begin
   loop
     execute format('drop policy if exists "admin full access" on public.%I', tbl);
     execute format(
-      'create policy "admin full access" on public.%I for all to authenticated using (true) with check (true)',
-      tbl
-    );
+      'drop policy if exists "staff read %1$s" on public.%1$I', tbl);
+    execute format(
+      'create policy "staff read %1$s" on public.%1$I
+         for select to authenticated
+         using (public.is_admin_user())', tbl);
+  end loop;
+
+  -- Escrita interna: somente administradores do estúdio.
+  foreach tbl in array array[
+    'services', 'professionals', 'gallery', 'business_hours', 'products',
+    'clients', 'bookings', 'orders', 'order_items', 'stock_movements'
+  ]
+  loop
+    execute format(
+      'drop policy if exists "admin manage %1$s" on public.%1$I; create policy "admin manage %1$s" on public.%1$I
+         for all to authenticated
+         using (public.is_admin_user())
+         with check (public.is_admin_user())', tbl);
   end loop;
 end $$;
 
@@ -264,6 +333,8 @@ create policy "admin read own profile" on public.admin_users
 -- -----------------------------------------------------------------------------
 
 -- Finaliza um pedido: baixa o estoque e registra as movimentações.
+-- SECURITY DEFINER: execução restrita a service_role (o servidor do app) —
+-- anon nunca pode disparar baixa de estoque.
 create or replace function public.finalize_order(p_order_id uuid)
 returns void
 language plpgsql
@@ -290,7 +361,10 @@ begin
 end;
 $$;
 
--- Visão consolidada para os relatórios do painel.
+revoke execute on function public.finalize_order(uuid) from public, anon, authenticated;
+grant execute on function public.finalize_order(uuid) to service_role;
+
+-- Visão consolidada para os relatórios do painel (execução restrita).
 create or replace function public.admin_revenue_summary(p_from date, p_to date)
 returns table (
   revenue_cents bigint,
@@ -329,14 +403,26 @@ as $$
 $$;
 
 -- -----------------------------------------------------------------------------
---  Semente mínima de horários (idempotente)
+--  Semente mínima de horários (idempotente) — padrão do estúdio:
+--  terça a sábado, 09:00–19:00; domingo e segunda fechados.
 -- -----------------------------------------------------------------------------
 insert into public.business_hours (weekday, opens_at, closes_at, closed) values
-  (0, '10:00', '17:00', false),
-  (1, '09:00', '20:00', false),
-  (2, '09:00', '20:00', false),
-  (3, '09:00', '20:00', false),
-  (4, '09:00', '21:00', false),
-  (5, '09:00', '21:00', false),
+  (0, null, null, true),
+  (1, null, null, true),
+  (2, '09:00', '19:00', false),
+  (3, '09:00', '19:00', false),
+  (4, '09:00', '19:00', false),
+  (5, '09:00', '19:00', false),
   (6, '09:00', '19:00', false)
-on conflict (weekday) do nothing;
+on conflict (weekday) do update
+  set opens_at = excluded.opens_at,
+      closes_at = excluded.closes_at,
+      closed = excluded.closed;
+
+
+-- Restringir acesso aos relatorios
+revoke execute on function public.admin_revenue_summary(date, date)
+from public, anon, authenticated;
+
+grant execute on function public.admin_revenue_summary(date, date)
+to service_role;

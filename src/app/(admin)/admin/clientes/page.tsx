@@ -1,8 +1,10 @@
+import { getAdminSession } from "@/lib/auth";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { ClientsTable } from "@/components/admin/clients-table";
 import { getAdminClients } from "@/lib/data";
 
 export default async function AdminClientsPage() {
+  const session = await getAdminSession();
   const clients = await getAdminClients();
 
   return (
@@ -13,7 +15,10 @@ export default async function AdminClientsPage() {
       />
 
       <div className="mt-8">
-        <ClientsTable clients={clients} />
+        <ClientsTable
+          clients={clients}
+          canEditNotes={session?.role === "admin"}
+        />
       </div>
     </div>
   );

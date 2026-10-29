@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { MessageCircle, Package, ShieldCheck, Truck } from "lucide-react";
+import { MessageCircle, Package, ShieldCheck } from "lucide-react";
 
 import { Storefront } from "@/components/store/storefront";
 import { getProducts } from "@/lib/data";
@@ -23,32 +23,27 @@ export default async function StorePage() {
           Produtos da casa
         </h1>
         <p className="mt-4 text-base leading-relaxed text-ink-400">
-          Tudo o que usamos na cadeira está disponível aqui. Monte seu carrinho, envie o
-          pedido pelo WhatsApp e pague presencialmente na retirada.
+          Confira os produtos disponíveis, monte seu carrinho e envie o
+          pedido pelo WhatsApp. O pagamento é presencial, na retirada.
         </p>
       </div>
 
-      <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mt-10 grid gap-4 sm:grid-cols-3">
         {[
           {
             icon: Package,
             title: "Retirada na loja",
-            text: "Pronto no balcão em poucos minutos.",
-          },
-          {
-            icon: Truck,
-            title: "Envio pelos Correios",
-            text: "Para todo o Brasil, frete combinado no WhatsApp.",
+            text: "Combine a retirada com a equipe pelo WhatsApp.",
           },
           {
             icon: ShieldCheck,
-            title: "Produto original",
-            text: "Reposição direta de distribuidor oficial.",
+            title: "Pagamento presencial",
+            text: "Pague no estúdio ao retirar seu pedido.",
           },
           {
             icon: MessageCircle,
             title: "Pedido pelo WhatsApp",
-            text: "Confirmação e pagamento presencial.",
+            text: "Converse com a equipe para acompanhar seu pedido.",
           },
         ].map((item) => (
           <div key={item.title} className="card p-5">

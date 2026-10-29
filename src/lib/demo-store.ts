@@ -6,7 +6,16 @@ import {
   demoProfessionals,
   demoServices,
 } from "@/lib/demo-data";
-import type { Booking, Client, Order, Product, Professional, StockMovement } from "@/lib/types";
+import type {
+  Booking,
+  Client,
+  Order,
+  Product,
+  Professional,
+  ProfessionalHour,
+  ScheduleException,
+  StockMovement,
+} from "@/lib/types";
 
 /**
  * Armazenamento em memória usado apenas no "modo demonstração"
@@ -24,6 +33,14 @@ export const demoStore = {
   services: [...demoServices],
   professionals: [...demoProfessionals] as Professional[],
   stockMovements: [] as StockMovement[],
+  /** Prazo de guarda da solicitação pendente (min). */
+  settings: { holdMinutes: 30 },
+  /** Expediente semanal individual (vazio = padrão do estúdio). */
+  professionalHours: [] as ProfessionalHour[],
+  /** Exceções de agenda por data (folga, saída cedo, horário extra, bloqueio). */
+  scheduleExceptions: [] as ScheduleException[],
+  /** Envios já concluídos por chave de idempotência. */
+  idempotency: {} as Record<string, Booking>,
 };
 
 export function resetDemoStore(): void {
@@ -34,4 +51,8 @@ export function resetDemoStore(): void {
   demoStore.services = [...demoServices];
   demoStore.professionals = [...demoProfessionals];
   demoStore.stockMovements = [];
+  demoStore.settings = { holdMinutes: 30 };
+  demoStore.professionalHours = [];
+  demoStore.scheduleExceptions = [];
+  demoStore.idempotency = {};
 }

@@ -61,6 +61,7 @@ export function todayISO(): string {
   return new Date(now.getTime() - offset).toISOString().slice(0, 10);
 }
 
+
 export function addDaysISO(iso: string, days: number): string {
   const date = new Date(`${iso}T12:00:00`);
   date.setDate(date.getDate() + days);
@@ -68,10 +69,13 @@ export function addDaysISO(iso: string, days: number): string {
   return new Date(date.getTime() - offset).toISOString().slice(0, 10);
 }
 
-export function generateCode(prefix: string): string {
-  const random = Math.random().toString(36).slice(2, 7).toUpperCase();
-  const stamp = Date.now().toString(36).slice(-4).toUpperCase();
-  return `${prefix}-${stamp}${random}`;
+export function personInitials(name: string): string {
+  return name
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? "")
+    .join("");
 }
 
 export function cn(...classes: Array<string | false | null | undefined>): string {

@@ -1,118 +1,132 @@
-import { AtSign, Clock, Mail, MapPin, Phone, Scissors } from "lucide-react";
+import { ArrowRight, Clock, MapPin, Scissors } from "lucide-react";
 import Link from "next/link";
 
-import { siteConfig } from "@/lib/site-config";
-import { navigation } from "@/lib/site-config";
+import { addressLines, navigation, siteConfig } from "@/lib/site-config";
+
+const footerLink =
+  "transition-colors hover:text-[#dfad85] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#dfad85]";
+
+const iconBadge =
+  "flex size-11 shrink-0 items-center justify-center rounded-xl border border-[#dfad85]/25 bg-gradient-to-br from-[#45382e] to-[#242226] text-[#dfad85] shadow-[inset_0_1px_0_rgba(255,255,255,0.1),0_3px_0_#101114,0_6px_12px_rgba(0,0,0,0.2)]";
 
 export function SiteFooter() {
   const year = new Date().getFullYear();
 
   return (
-    <footer className="mt-24 border-t border-ink-800 bg-ink-900/60">
-      <div className="container-page grid gap-10 py-14 md:grid-cols-2 lg:grid-cols-4">
+    <footer className="relative overflow-hidden border-t border-white/10 bg-[#17181b] text-[#f7f4ef]">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#dfad85]/50 to-transparent"
+      />
+
+      <div className="container-page grid gap-12 py-14 md:grid-cols-3">
         <div>
-          <div className="flex items-center gap-2.5">
-            <span className="flex size-9 items-center justify-center rounded-full bg-brand-500/15 text-brand-400">
-              <Scissors className="size-4.5" />
-            </span>
-            <span className="display text-lg text-ink-50">{siteConfig.name}</span>
-          </div>
-          <p className="mt-4 max-w-xs text-sm leading-relaxed text-ink-400">
-            {siteConfig.description}
-          </p>
-          <a
-            href={siteConfig.social.instagram}
-            target="_blank"
-            rel="noreferrer"
-            className="mt-5 inline-flex items-center gap-2 text-sm text-ink-300 transition-colors hover:text-brand-300"
+          <Link
+            href="/"
+            className={`inline-flex items-center gap-3 ${footerLink}`}
           >
-            <AtSign className="size-4" />
-            {siteConfig.contact.instagram}
-          </a>
-        </div>
+            <span className={iconBadge}>
+              <Scissors aria-hidden className="size-5" />
+            </span>
 
-        <div>
-          <h3 className="text-xs font-semibold tracking-[0.2em] text-ink-200 uppercase">
-            Navegação
-          </h3>
-          <ul className="mt-4 space-y-2.5 text-sm text-ink-400">
-            {navigation.map((item) => (
-              <li key={item.href}>
-                <Link href={item.href} className="transition-colors hover:text-brand-300">
-                  {item.label}
-                </Link>
-              </li>
-            ))}
-            <li>
-              <Link href="/admin" className="transition-colors hover:text-brand-300">
-                Painel administrativo
-              </Link>
-            </li>
-          </ul>
-        </div>
-
-        <div>
-          <h3 className="text-xs font-semibold tracking-[0.2em] text-ink-200 uppercase">
-            Contato
-          </h3>
-          <ul className="mt-4 space-y-3 text-sm text-ink-400">
-            <li className="flex gap-2.5">
-              <MapPin className="mt-0.5 size-4 shrink-0 text-brand-500" />
-              <span>
-                {siteConfig.address.street}, {siteConfig.address.district}
-                <br />
-                {siteConfig.address.city} — {siteConfig.address.state}
-              </span>
-            </li>
-            <li className="flex gap-2.5">
-              <Phone className="mt-0.5 size-4 shrink-0 text-brand-500" />
-              <a
-                href={`tel:${siteConfig.contact.phoneE164}`}
-                className="transition-colors hover:text-brand-300"
-              >
-                {siteConfig.contact.phone}
-              </a>
-            </li>
-            <li className="flex gap-2.5">
-              <Mail className="mt-0.5 size-4 shrink-0 text-brand-500" />
-              <a
-                href={`mailto:${siteConfig.contact.email}`}
-                className="transition-colors hover:text-brand-300"
-              >
-                {siteConfig.contact.email}
-              </a>
-            </li>
-            <li className="flex gap-2.5">
-              <Clock className="mt-0.5 size-4 shrink-0 text-brand-500" />
-              <span>Seg a Sex 9h — 21h · Sáb 9h — 19h · Dom 10h — 17h</span>
-            </li>
-          </ul>
-        </div>
-
-        <div>
-          <h3 className="text-xs font-semibold tracking-[0.2em] text-ink-200 uppercase">
-            Atendimento
-          </h3>
-          <ul className="mt-4 space-y-2.5 text-sm text-ink-400">
-            <li>Agendamento online com confirmação pelo WhatsApp.</li>
-            <li>Pagamento sempre presencial, na loja.</li>
-            <li>Retirada de produtos na loja ou envio pelos Correios.</li>
-          </ul>
-          <Link href="/agendar" className="btn btn-ghost mt-5">
-            Agendar horário
+            <span className="display text-2xl">{siteConfig.name}</span>
           </Link>
+
+          <p className="mt-5 max-w-xs text-sm leading-relaxed text-[#c7c8ce]">
+            Barbearia, unhas e cuidados com a beleza em um só lugar.
+          </p>
+
+          <Link
+            href="/agendar"
+            className="mt-6 inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-[#e4b38e]/40 bg-gradient-to-b from-[#dfad85] to-[#ba7952] px-5 py-3 text-sm font-semibold text-[#181310] shadow-[inset_0_1px_0_rgba(255,255,255,0.4),0_4px_0_#754b34,0_8px_20px_rgba(0,0,0,0.25)] transition-[transform,filter] hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#dfad85] motion-safe:active:translate-y-0.5 motion-reduce:transition-none"
+          >
+            Agendar horário
+            <ArrowRight aria-hidden className="size-4" />
+          </Link>
+        </div>
+
+        <nav aria-label="Navegação do rodapé">
+          <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-[#dfad85]">
+            Explore o estúdio
+          </h2>
+
+          <ul className="mt-5 grid grid-cols-2 gap-x-5 gap-y-3 text-sm text-[#c7c8ce]">
+            {navigation
+              .filter(
+                (item) =>
+                  item.href !== "/admin" &&
+                  !item.href.startsWith("/admin/"),
+              )
+              .map((item) => (
+                <li key={item.href}>
+                  <Link href={item.href} className={footerLink}>
+                    {item.label}
+                  </Link>
+                </li>
+              ))}
+          </ul>
+        </nav>
+
+        <div>
+          <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-[#dfad85]">
+            Visite o estúdio
+          </h2>
+
+          <ul className="mt-5 space-y-6 text-sm text-[#c7c8ce]">
+            <li className="flex items-start gap-4">
+              <span className={iconBadge}>
+                <MapPin aria-hidden className="size-5" />
+              </span>
+
+              <div className="min-w-0">
+                <p className="leading-relaxed">
+                  {addressLines.map((line, index) => (
+                    <span key={line}>
+                      {index > 0 && <br />}
+                      {line}
+                    </span>
+                  ))}
+                </p>
+
+                <a
+                  href={siteConfig.map.directionsUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className={`mt-2 inline-flex min-h-11 items-center gap-2 text-[#dfad85] ${footerLink}`}
+                >
+                  Como chegar
+                  <ArrowRight aria-hidden className="size-4" />
+                </a>
+              </div>
+            </li>
+
+            <li className="flex items-start gap-4">
+              <span className={iconBadge}>
+                <Clock aria-hidden className="size-5" />
+              </span>
+
+              <p className="leading-relaxed">
+                Terça a sábado, 9h — 19h
+                <br />
+                Domingo e segunda: fechado
+              </p>
+            </li>
+          </ul>
         </div>
       </div>
 
-      <div className="border-t border-ink-800">
-        <div className="container-page flex flex-col items-center justify-between gap-3 py-5 text-xs text-ink-500 sm:flex-row">
+      <div className="border-t border-white/10 bg-black/10">
+        <div className="container-page flex flex-col gap-3 py-6 text-xs leading-relaxed text-[#a8a9b1] sm:flex-row sm:items-center sm:justify-between">
           <p>
-            © {year} {siteConfig.legalName}. Todos os direitos reservados.
+            © {year} {siteConfig.name}. Todos os direitos reservados.
           </p>
-          <p>
-            Feito com Next.js, Tailwind CSS e Supabase — paginação{" "}
-            <span className="text-ink-400">presencial</span>.
-          </p>
+          <p>Pagamento presencial no local.</p>
+          <Link
+            href="/admin/login"
+            className="text-[#c7c8ce] transition-colors hover:text-[#dfad85] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#dfad85]"
+          >
+            Área da equipe
+          </Link>
         </div>
       </div>
     </footer>
